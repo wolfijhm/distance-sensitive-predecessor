@@ -1,0 +1,1601 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{amsmath,amsfonts,amssymb,graphicx,amsthm}
+
+\usepackage{cite}
+\usepackage{xcolor}
+
+\newtheorem{theorem} {Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+
+
+\graphicspath{{./fig/}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\etal}{\emph{et al.}\xspace}
+\newcommand{\?}{\mskip1.5mu}
+\def\..{\,\mathpunct{\ldotp\ldotp}} % Middle stuff for intervals. Usage: \..
+\DeclareMathOperator{\lcp}{lcp} % longest common prefix
+\DeclareMathOperator{\lca}{lca} % least common ancestor
+\DeclareMathOperator{\exit}{exit}
+\DeclareMathOperator{\lrange}{left}
+\DeclareMathOperator{\rrange}{right}
+\DeclareMathOperator{\extent}{extent}
+\DeclareMathOperator{\Pref}{Pref}
+\DeclareMathOperator{\pred}{pred}
+\DeclareMathOperator{\fbs}{FBS}
+
+
+
+
+\usepackage[ruled,noend,linesnumbered,algosection]{algorithm2e}
+\newenvironment{alg}{
+  \begin{algorithm}[htbp]
+    \DontPrintSemicolon
+    \SetKwInput{KwIn}{input}
+    \SetKwInput{KwOut}{output}
+  }{\end{algorithm}}
+
+\newcommand{\aremark}[3]{\textcolor{blue}{\textsc{#1 #2:}}
+  \textcolor{red}{\textsf{#3}}}
+\newcommand{\djamal}[2][says]{\aremark{Djamal}{#1}{#2}}
+\newcommand{\paolo}[2][says]{\aremark{Paolo}{#1}{#2}}
+\newcommand{\marcel}[2][says]{\aremark{Marcel}{#1}{#2}}
+\newcommand{\wolfgang}[2][says]{\aremark{Wolfgang}{#1}{#2}}
+
+
+  
+
+\title{TBD\footnote{
+Preliminary versions appeared as 
+D. Belazzougui, P. Boldi, and S. Vigna. 
+\emph{Predecessor search with distance-sensitive query
+time}. \texttt{arXiv:1209.5441}, 2012
+and 
+M. Ehrhardt and W. Mulzer.  \emph{Delta-Fast Tries: Local 
+Searches in Bounded Universes with Linear Space}. Proc.~15th WADS,
+2017.  WM was partially 
+supported by DFG project MU/3501-1.}}
+
+\author{Djamal Belazzougui\thanks{Universit\'e Paris 
+        Diderot---Paris 7, France,
+        \texttt{djamal.belazzougui@gmail.com}}
+        \and
+        Paolo Boldi\thanks{Universit\`a degli Studi di Milano, Italy, 
+	\texttt{boldi@dsi.unimi.it}}
+        \and
+        Marcel Ehrhardt\thanks{Institut f\"ur Informatik, Freie 
+	Universit\"at Berlin,
+        \texttt{\{marehr, mulzer\}@inf.fu-berlin.de}}
+        \and 
+        Wolfgang Mulzer\footnotemark[4]
+        \and 
+        Sebastiano Vigna\thanks{Universit\`a 
+	degli Studi di Milano, Italy, 
+	\texttt{vigna@acm.org}}
+        }
+\date{}
+%---------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\wolfgang{TODO}
+\end{abstract}
+
+\section{Sensitive Abstract}
+A \emph{predecessor (successor) search} finds the largest element $x^-$ smaller
+than the input string $x$ (the smallest element $x^+$ larger than or equal to
+$x$, respectively) out of a given set $S$; in this paper, we consider
+the static case (i.e., $S$ is fixed and does not change over time) and assume that
+the $n$ elements of $S$ are available for inspection. We present a number of
+algorithms that, with a small additional index (usually of $O(n\log w)$ bits,
+where $w$ is the string length), can answer predecessor/successor queries
+quickly and with time bounds that depend on different kinds of \emph{distance},
+improving significantly several results that appeared in the recent literature.
+Intuitively, our first result has a running time that depends on the distance
+between $x$ and $x^\pm$: it is especially efficient when the input $x$ is
+either very close to or very far from $x^-$ or $x^+$; our second result depends on some global notion of distance in the set $S$,
+and is fast when the elements of $S$ are more or less equally spaced in the universe; finally, for our third result
+we rely on a \emph{finger} (i.e., an element of $S$) to improve upon the first
+one; its running time depends on the distance between the input and the
+finger.
+
+\section{Introduction}
+
+In this paper we study the \emph{predecessor problem} on a \emph{static} set
+$S$ of binary strings of length $w$. It is known from recent
+results~\cite{PatrascuTh06,PatrascuTh07} that structures \emph{\` a la} van Emde Boas
+(e.g., y-fast tries~\cite{Willard83}) using time $O(\log w)$ are optimal among those
+using linear space. The lower bound proved in~\cite{PatrascuTh06,PatrascuTh07} has
+actually several cases, another one is realised, for instance, in
+exponential trees~\cite{AnderssonTh07}. A very comprehensive discussion 
+of the literature can be found in Mihai P{\v a}tra{\c s}cu's
+thesis~\cite{Patrascu08}.
+
+Albeit the match between upper and lower bounds settles up the problem in the
+worst case, there is a lot of space for improvement in two directions: first of
+all, if access to the original set $S$ (as a sorted array) is available, 
+it is in principle possible to devise an index using \emph{sublinear} additional space
+and still answer predecessor queries in optimal time; second, one might
+try to improve upon the lower bound by making access time dependent on the
+structure of $S$ or on some property relating the query string $x$ to the set
+$S$.
+
+In this paper, we describe sublinear indices that
+provide significant improvements over previous bounds\footnote{Our space bounds
+are always given in terms of the additional number of bits besides those that
+are necessary to store $S$.}. Given a set $S$, we denote with $x^-$ and $x^+$
+the predecessor and successor in $S$ of a query string $x$, and let $d(x,S) =
+\min\{x^+-x,x-x^-\}$ and $D(x,S) = \max\{x^+-x,x-x^-\}$. Note that $d(x,S)$ is small when $x$ is close to some element of $S$, whereas $w-D(x,S)$
+is small when $x$ is far from at least one of $x^\pm$.
+Finally, let $\Delta_M$ and $\Delta_m$ be the maximum and minimum distance, respectively,
+between two consecutive elements of $S$.
+
+\begin{enumerate}
+  \item We match the static worst-case search time $O(\log\log d(x,S))$
+  of~\cite{BoseDoDuHoMo13}, which was obtained using space $O(n w \log
+  \log w)$, but our index requires just $O(n\log w)$ additional space (and
+  thus overall linear space).
+  \item We improve exponentially over \emph{interval-biased search
+  trees}~\cite{BilleLaRaSaSaWe15}, answering predecessor queries in time\footnote{The
+  bound in~\cite{BilleLaRaSaSaWe15} is $O(w-\log(x^+-x^-))$. Our proofs are correct
+  even replacing $D(x,S)$ with $x^+-x^-$, but the difference is immaterial as
+  $x^+-x^-\leq 2D(x,S)$, and we like the duality with the previous bound
+  better.} $O(\log(w-\log D(x,S)))$, again using just $O(n\log w)$ additional bits of
+  space.
+  \item We improve exponentially over \emph{interpolation
+  search}~\cite{DemaineJoPa04}, answering
+  predecessor queries in time $O(\log\log(\Delta_M/\Delta_m))$,
+  always using just $O(n\log w)$ additional bits of space.
+  \item Finally, with slightly more (but still sublinear) space we can exploit a
+  \emph{finger} $y\in S$ to speed up our second result to $O(\log(\log|x-y|-\log D(x,S)))$, which is in
+  some cases better than the bound reported
+  in~\cite{AnderssonTh07}, and improves exponentially over
+  interval-biased search trees, which need time  $O(\log(2^w-y)-\log
+  D(x,s))$~\cite{BilleLaRaSaSaWe15}.
+\end{enumerate}
+
+We remark that combining the first two results we show that predecessor search can be 
+performed in time  $O(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\})$ using $O(n\log w)$ 
+bits of additional space. Our results are obtained starting from a refined version of
+\emph{fat binary search in a z-fast trie}~\cite{BelazzouguiBoPaVi09} in which the initial search interval
+can be specified under suitable conditions, confirming the intuition that fat
+binary search can be used as a very versatile building block for data structures.
+
+\section{Notation and tools}
+\label{sec:notation}
+
+%In this section, we introduce some terminology and notation adopted throughout
+%the rest of the paper. 
+We use von Neumann's definition
+and notation for natural numbers, and identify $n=\{\?0, 1, \ldots, n-1\?\}$, so
+$2=\{\?0,1\?\}$ and $2^*$ is the set of all binary strings.
+If $x$ is a string, $x$ juxtaposed with an interval is the substring of $x$ with
+those indices (starting from 0). Thus, for instance, $x[a\..b)$
+is the substring of $x$ starting at position $a$ (inclusive) and ending at position
+$b$ (exclusive). We will write $x[a]$ for $x[a\..a]$. The symbol $\preceq$
+denotes prefix order, and $\prec$ is its strict version. Given a prefix $p$, we
+denote with $p+1$ and $p-1$ the strings in $2^{|p|}$ that come before and after
+$p$ in lexicographical order; in case they do not exist, we assume by convention
+that the expressions have value $\bot$. 
+All logarithms in this paper are binary and we postulate that $\log x=1$
+whenever $x<2$.
+
+Given a set $S$ of $n$ binary strings of length $w$, we let
+\begin{align*}
+	x^- &= \max\{\?y \in S \mid y< x\?\} &&\text{(the \emph{predecessor} of
+	$x$ in $S$)}\\
+	x^+ &= \min\{\?y \in S \mid y\geq x\?\} && \text{(the \emph{successor} of
+	$x$ in $S$)},
+\end{align*}
+where $\leq$ is the lexicographic order. A \emph{predecessor/successor} query is
+given by a string $x$, and the answer is $x^\pm$. In this paper, for the sake
+of simplicity we shall actually concentrate on predecessor search only,
+also because our algorithms actually return the \emph{rank} of the predecessor
+in $S$, and thus are in principle more informative (e.g., the successor can be
+immediately computed adding one to the returned index).
+
+We assume to be able to store a constant-time $r$-bit function on $n$ keys using
+$rn+cn +o(n)$ bits for some constant $c\geq 0$: the function may return
+arbitrary values outside of its domain (for practical implementations
+see~\cite{BelazzouguiBoPaVi11}).
+
+We work in the standard RAM model with a word of length $w$, allowing
+multiplications, and adopt the full randomness assumption. Note, however, 
+that the dependence on multiplication and full randomness is only due to the
+need to store functions succinctly; for the rest, our algorithms do not depend
+on them.
+
+\subsection{Z-fast tries} 
+
+We start by defining some basic notation for compacted tries. Consider the compacted
+trie~\cite{Knuth98} associated with a prefix-free set of strings\footnote{Albeit
+the results of this paper are discussed for sets of strings
+of length $w$, this section provides results for arbitrary sets of prefix-free strings whose length is
+$O(w)$.} $S\subseteq 2^*$. \begin{figure}[t]
+\centering
+\includegraphics[scale=.80]{zpred-1.mps}\qquad\raisebox{2cm}{\small
+$T$~\begin{tabular}{c}
+\fbox{\begin{tabular}{lcl}
+0010 & $\to$ & $001001$\\
+00100110 & $\to$ & $00100110100100$\\
+\end{tabular}}\qquad
+\end{tabular}
+}
+\caption{\label{fig:ztrie}(above) A compacted trie, the related names, and the
+function $T$ of the associated z-fast trie. The skip interval for $\alpha$ is
+$[7\..13]$. Dashed lines show the end of the handles of internal nodes.}
+\end{figure}
+Given a node $\alpha$ of the trie (see Figure~\ref{fig:ztrie}):
+\begin{itemize}
+	\item the \emph{extent} of $\alpha$, denoted by $e_\alpha$, is the longest
+	common prefix of the strings represented by the external nodes 
+	that are descendants of $\alpha$ (extents of internal nodes are called
+	\emph{internal extents});
+	\item the \emph{compacted path} of $\alpha$, denoted by $c_\alpha$, is the
+	string labelling $\alpha$;
+ 	\item the \emph{name} of $\alpha$ is the extent of $\alpha$
+ 	deprived of its suffix $c_\alpha$.
+	\item the \emph{skip interval} of $\alpha$ is $[1\..|e_\alpha|]$ for the root, and $[|n_\alpha|\..|e_\alpha|]$
+	for all other nodes.
+\end{itemize}
+
+Given a string $x$, we let $\exit x$ be the exit node of $x$, that is, the
+only node $\alpha$ such that $n_\alpha$ is a prefix of $x$ and
+either $e_\alpha=x$ or $e_\alpha$ is not a prefix of $x$.
+We recall a key definition from~\cite{BelazzouguiBoPaVi09}:
+
+\begin{definition}[2-fattest numbers and handles] 
+\label{def:twofattest}
+The \emph{2-fattest number} of an interval
+$(a\..b)$ of positive integers is the unique integer in $(a\..b)$ that is
+divisible by the largest power of two, or equivalently, that has the largest
+number of trailing zeroes in its binary representation. The \emph{handle}
+$h_\alpha$ of a node $\alpha$ is the prefix of $e_\alpha$ whose length is 2-fattest number in the skip interval of $\alpha$
+(see Figure~\ref{fig:ztrie}). If the skip interval is empty (which can only
+happen at the root) we define the handle to be the empty string.
+\end{definition}
+We remark that if $f$ is 2-fattest in $(a\..b)$, it is also 2-fattest in every
+subinterval of $(a\..b)$ that still contains $f$.
+
+\begin{definition}[z-fast trie]
+Given a prefix-free set $S\subseteq 2^*$, the \emph{z-fast trie on $S$} is 
+a function $T$ mapping $h_\alpha \mapsto e_\alpha$, for each internal node
+$\alpha$ of the compacted trie associated with $S$, and any other string to an
+arbitrary internal extent.
+\end{definition}
+
+The most important property of $T$ is that it makes us able to find very quickly
+the name of the exit node of a string $x$ using 
+a fat binary search (Algorithm~\ref{algo:query}). The basic idea is that of locating the
+longest internal extent $e$ that is a proper prefix of $x$:
+the name of $\exit x$ is then $x[0\..|e|+1)$. The algorithm
+narrows down an initial search interval by splitting it on its 2-fattest number (rather than on its midpoint).
+The version reported here (which builds upon~\cite{BelazzouguiBoVi10}) has two main features:
+very weak requirements on $T$, and the possibility of starting the search on a small interval. The
+latter feature will be the key in obtaining our main results.
+
+\iffalse
+\begin{algorithm}
+\smallskip\textbf{Input:} a nonempty string $x\in2^*$, an integer $0\leq
+a<|x|$ such that $a=0$ or $x[0\..a)$ is an internal extent of the compacted trie on $S$, and
+an integer $b\leq|x|$ larger than the length of the longest internal extent of the
+compacted trie on $S$ that is a proper prefix of $x$.
+
+\textbf{Output:} the name of $\exit{x}$	
+\vspace{-1.5em}
+\begin{tabbing}
+\setcounter{prgline}{0}
+\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
+\pl\WHILE $b-a>1$ \DO
+\pl\>$f\leftarrow $ the 2-fattest number in $(a\..b)$
+\pl\>$e\leftarrow T(x[0\..f))$
+\pl\>\IF $f\leq|e|\land e\prec x$ \THEN $a\leftarrow |e|$ \COMMENT{Move from $(a\..b)$ to $(|e|\..b)$}
+\pl\>\ELSE $b\leftarrow f$ \COMMENT{Move from $(a\..b)$ to $(a\..f)$}
+\pl\OD
+\pl\IF $a=0\land e_\text{root}\neq\epsilon$ \RETURN $\epsilon$
+\pl\ELSE \RETURN $x[0\..a+1)$
+\end{tabbing}
+\caption{\label{algo:query}Fat binary search on the z-fast trie: at the end of the
+execution we return the name of $\exit x$.}
+\end{algorithm}
+\fi
+
+%We will use the following property of 2-fattest numbers, proved
+% in~\cite{BelazzouguiBoPaVi09}:
+
+\begin{lemma}\label{lem:correctness}
+Let $p_0=\epsilon$ and $p_1$,~$p_2$,
+$\dots\,$,~$p_t$ be the internal extents of the compacted
+trie that are \emph{proper} prefixes of $x$, ordered by increasing length. 
+Let $(a\..b)$ be the interval maintained by 
+Algorithm~\ref{algo:query}. Before and after each iteration the following invariants 
+are satisfied: 
+\begin{enumerate}
+    \item\label{enu:lema} $a=|p_j|$ for some $j$;
+    \item\label{enu:lemb} $|p_t|< b$.
+\end{enumerate}
+Thus, at the end of the loop, $a=|p_t|$.
+\end{lemma}
+\begin{proof}
+\noindent(\ref{enu:lema})
+The fact that $a=|p_j|$ for some $j$ is true at the beginning, and when
+$a$ is reassigned (say, $a \leftarrow |e|$) it remains true: indeed, since $e$
+is an internal extent, $a<f\leq |e|$ and $e\prec x$, $e=p_k$ for some $k>j$.
+
+\noindent(\ref{enu:lemb})
+By (\ref{enu:lema}), $a$ is always the length of some $p_j$,
+so $b>|p_t|$ at the beginning, and then it can only decrease; thus,
+$(a\..b)$ contains the concatenation of some contiguous skip intervals of the
+proper ancestors of $\exit x$ up to the skip interval of $\exit x$ (which may
+or may not be partially included itself).
+
+Now, assume by contradiction that when we update $b$ there is a node $\alpha$
+with extent $e_\alpha$ which is a proper
+prefix of $x$ of length $f$ or greater. Since $f$ is 2-fattest in $(a\..b)$, it
+would be 2-fattest in the skip interval of $\alpha$ (as the latter is contained
+in $(a\..b)$), so $x[0\..f)$ would be the handle of $\alpha$, and $T$ would have
+returned $e_\alpha$, which satisfies $f\leq |e_\alpha|$ and $e_\alpha\prec x$, contradicting the fact that we are
+updating $b$. We conclude that the invariant $|p_t|<b$ is preserved.
+\end{proof}
+
+\begin{theorem}
+\label{thm:correctnessfbs}
+Algorithm~\ref{algo:query} completes in at most $\lceil\log(b-a)\rceil$
+iterations, returning the name of $\exit x$.
+\end{theorem}
+\begin{proof}
+We first prove the bound on the number of iterations. Note that given an
+interval $(\ell\..r)$ in which there is at most one multiple of $2^i$, the two
+subintervals $(\ell\..f)$ and $(f\..r)$, where $f$ is the 2-fattest number in
+$(\ell\..r)$, contain both at most one multiple of $2^{i-1}$ (if one of the
+intervals contained two such multiples, there would be a multiple of $2^i$
+inbetween, contradicting our assumption); this observation is \emph{a fortiori}
+true if we further shorten the intervals. Thus, we cannot
+split on a 2-fattest number more than $i$ times, because at that point the
+condition implies that the interval has length at most one. But clearly an interval of length $t$ contains at most one multiple of $2^{\lceil\log t\rceil}$, which shows that the algorithm
+iterates no more than $\lceil\log(b-a)\rceil$ times.
+
+Finally, if $t>0$ then $x[0\..|p_t|+1)$ is the name of $\exit x$.
+Otherwise, $\exit x$ is the root (hence the special case in Algorithm~1).
+\end{proof}
+
+Note that finding the 2-fattest number in an interval requires the computation of
+the most significant bit\footnote{More precisely, the 2-fattest number in
+$(\ell\..r]$ is $-1 \ll \operatorname{msb}(\ell \oplus r) \mathbin\& r$.}, but
+alternatively starting from the interval $(\ell\..r]$
+one can set $i=\lceil\log(r-\ell)\rceil$ (this can be computed trivially in time $O(\log(r-\ell))$)
+and then check, for decreasing $i$, whether $(-1\ll i)\mathbin\& \ell \neq (-1\ll i)\mathbin\&
+r$: when the test is satisfied, there is exactly one multiple of $2^i$ in the interval, 
+namely $f=r \mathbin\& -1
+\ll i$, which is also 2-fattest. This property is preserved by splitting on 
+$f$ and possibly further shortening the resulting interval (see the first part
+of the proof of Theorem~\ref{thm:correctnessfbs}), so we can just continue decreasing $i$ and testing, 
+which requires still no more than $\lceil\log(r-\ell)\rceil$ iterations.
+
+\subsection{Implementing the function $T$}
+
+A z-fast trie (i.e., the function $T$ defining it) can be implemented in
+different ways; in particular, for the purpose of this paper, we 
+show that if constant-time access to the elements of $S$ in sorted order is
+available, then the function $T$ describing a z-fast trie can be implemented using additional $O(n\log w)$ bits. We will use the
+notation $S[i]$ ($0\leq i<|S|$) for the $i$-th element of $S$. We need two key
+components:
+\begin{enumerate}
+  \item a constant-time function $g$ mapping the handles to the length of the
+  name of the node they are associated with (i.e., $h_\alpha \mapsto
+  |n_\alpha|$ for every internal node $\alpha$);
+  \item a \emph{range locator}---a data structure that, given the name of a
+  node $n_\alpha$, returns the interval of 
+  keys that are prefixed by $n_\alpha$; more precisely, it returns the smallest
+  ($\lrange(n_\alpha)$) and largest index ($\rrange(n_\alpha)$, respectively) in $S$ of
+  the set of strings prefixed by $n_\alpha$.
+\end{enumerate}
+The function $g$ can be implemented in constant time using $O(n\log w)$ bits,
+and there are constant-time range locators using $O(n\log w)$
+bits~\cite{BelazzouguiBoPaVi09}.
+
+Now, to compute $T(h)$ for a given handle $h$, we
+consider the candidate node name $p = h[0\..g(h))$ and return the longest common
+prefix of $S[\lrange(p)]$ and $S[\rrange(p)]$. If $h$ is actually a handle, the whole procedure clearly succeeds and
+we obtain the required information; otherwise, we will be returning
+some unpredictable internal extent (unless $\lrange(p)=\rrange(p)$, but this
+case can be easily fixed). Summing up,
+\begin{theorem}
+\label{th:zfast}
+If access to the set $S$ is available, the z-fast trie can be
+implemented in constant time using additional $O(n\log w)$ bits of space.
+\end{theorem}
+This function enjoys the additional property that, no matter which
+the input, it will always return an extent.
+We also notice that using the same data it is also easy to implement a function
+that returns a node extent given a node name:
+\begin{definition}[$\extent$]
+Let $p$ be a node name. Then $\extent(p)$ (the extent of the node named $p$)
+can be computed in constant time as the longest common prefix of $S[\lrange(p)]$ and $S[\rrange(p)])$.
+\end{definition}
+
+\subsection{Using the range locator to check prefixes}
+
+Given a set $P\subseteq \Pref S$, we want to be able to check in constant time
+and little space that a prefix $p$ either belongs to $P$, or is not a prefix of a string in $S$. Assume that we have a function $f$ 
+defined on $P$ and returning, for each $p\in P$, the length of the name of the exit node of $p$. 
+Our key observation is that a range locator, combined with access to the array $S$, can be used to ``patch''
+$f$ so that it returns a special value $\bot$ outside of $\Pref S$:
+% \footnote{We remark
+% that we cannot claim that $f$ will return $\bot$ on elements outside of $P$,
+% unless they are not in $\Pref S$ either.} 
+\begin{theorem}
+\label{th:pref}
+Let $P\subseteq\Pref S$ and $f: P\to \N$ be a constant-time function mapping
+$p\in P$ to $|n_{\exit p}|$. If access to the set $S$ is available, using an additional
+constant-time range locator we can extend $f$ to a constant-time function $\hat f:2^*\to \N
+\cup\{\bot\}$ such that $\hat f(p)=|n_{\exit p}|$ for all $p \in P$, and $\hat f(p)=\bot$ for
+all $p \not\in\Pref S$.
+\end{theorem}
+\begin{proof}
+To compute $\hat f(p)$ for a $p\in 2^*$ we proceed as follows:
+\begin{enumerate}
+  \item we compute the candidate length $t=f(p)$ of the name of $\exit p$;
+  \item if $t\leq |p|$ and $p\preceq \extent(p[0\..t))$ we return $f(p)$,
+  otherwise we return $\bot$.
+\end{enumerate}
+Clearly, if $p\in P$, by definition $f(p)=|n_{\exit p|}|\leq |p|$, and we
+compute correctly the extent of $\exit p$, so we return $f(p)=|n_{\exit p}|$.
+On the other hand, if $p \not\in \Pref S$ it cannot be the prefix of an element
+of $S$, so in the last step we certainly return $\bot$.
+\end{proof}
+
+% Observe that actually $\hat f$ will return the length of the name of the exit
+% node for all prefixes in a set $\hat P$ that satisfies $P\subseteq \hat P\subseteq\Pref S$.
+
+\section{Locally sensitive predecessor search}
+\label{sec:pred}
+
+Our purpose is now to combine Theorem~\ref{th:zfast} and~\ref{th:pref} to answer
+efficiently predecessor queries in a way that depends on the distance
+between the query string and its predecessor and successor. 
+First of all, it is clear that we can easily compute the index of the 
+predecessor of a string if its exit node is known (e.g., by fat binary search): 
+\begin{definition}($\pred$, $\fbs^-$)
+Given a string $x$ and the length $t$ of the name of $\exit x$, we define the constant-time function $\pred(x,t)$
+as follows:
+\begin{itemize}
+  \item if $x \preceq \extent(x[0\..t))$, or if the first bit of $x$ at which $x$
+  and $\extent(x[0\..t))$ differ is a $0$, 
+  the index of the predecessor of $x$ is $\lrange(\exit x)-1$ (we use the
+  convention that $-1$ is returned if no predecessor exists);
+  \item otherwise, the index of the predecessor of $x$ is $\rrange(\exit x))$.
+\end{itemize}
+ We denote with $\fbs^-(x,a,b)$ the predecessor index computed by running Algorithm~\ref{algo:query} 
+ (with inputs $x$, $a$ and $b$) to obtain the name of $\exit x$ and then invoking $\pred$.
+\end{definition}
+We remark that the definition above implies that predecessor search
+(by means of $\fbs^-(x,0,|x|)$) is possible in time $O(\log w)$ using an index
+of $O(n\log w)$ bits.
+
+The rest of this section is devoted at making the computation of the
+predecessor of $x$  
+more efficient by storing selected prefixes of strings in $S$ 
+to reduce significantly the initial search interval of
+Algorithm~\ref{algo:query} (i.e., to increase the parameter $a$).
+It turns out that this pre-computation phase does dramatically reduce the number
+of steps required, making them depend on the distance between the query string
+$x$ and its predecessors and successors. More precisely, for a given set $S$ and
+a string $x$, let us define
+\[
+	d(x,S) = \min\{x^+-x,x-x^-\} \quad\text{ and }\quad
+	D(x,S) = \max\{x^+-x,x-x^-\};	
+\]
+if only $x^-$ (equivalently for $x^+$) is defined, we let $d(x,S)=D(x,S)=x-x^-$.
+We call $d(x,S)$ (respectively, $D(x,S)$) the \emph{short
+distance} (\emph{long distance}) between $x$ and $S$. We will devise two
+distinct predecessor algorithms whose performance depend on the short and on the
+long distance between the query string and the queried set $S$:
+both algorithms use the setup described in Theorem~\ref{th:pref} but with a
+different choice of the function $f:P\to \N$. 
+
+
+Before proceeding with the presentation of the algorithms, it is worth observing
+the following lemmata:
+\begin{lemma}
+\label{lemma:hitpref}
+	Let $x$ be a string, $j \leq w-\log d(x,S)$ and $p=x[0\..j)$. Then either $p$
+	or $p+1$ or $p-1$ belong to $\Pref S$. 
+\end{lemma}
+\begin{proof}
+Suppose that neither $p$ nor $p+1$ nor $p-1$ belong to $\Pref S$; there are
+$2^{w-j}$ strings prefixed by $p$ ($x$ being one of them), and the same is true
+of $p-1$ and $p+1$. So, the element $y \in S$ that minimises $|y-x|$ (that will be one
+of $x^-$ or $x^+$) is such that $|y-x|>2^{w-j}$. Hence $d(x,S)>2^{w-j}$, so
+$j>w-\log d(x,S)$, contradicting the hypothesis.
+\end{proof}
+\begin{lemma}
+\label{lemma:shortinprefs}
+	Let $x$ be a string; if $p$ is a prefix of $x$ such that $p \in \Pref S$ and
+	$|p|>w-\log D(x,S)$, then $x$ is either smaller or larger than all the
+	elements of $S$ that have $p$ as prefix.
+\end{lemma}
+\begin{proof}
+Suppose that there is some prefix $p\in \Pref S$ of $x$ longer than $w-\log
+D(x,S)$ and that there are two elements of $S$ having $p$ as prefix and that
+are smaller and larger than $x$, respectively; in particular, $p$ is also a
+prefix of $x^+$ and $x^-$. Since $p$ is the prefix of less than $2^{\log D(x,S)}=D(x,S)$ strings, $x^+-x^-<D(x,S)$; but $x^+-x^-\geq D(x,S)$, so we have a contradiction.
+\end{proof}
+
+\subsection{Short-distance predecessor algorithm}
+
+Our first improvement allows for the computation time to depend on short
+distances, using techniques inspired by~\cite{BoseDoDuHoMo13}. To this aim, let us
+consider the following set of prefixes:
+\[
+	P=\bigl\{\,x\bigl[0\..w-2^{2^i}\bigr) \mid x \in  S \text{ and }
+	i=0,1,\dots,\lfloor\log(\log w - 1)\rfloor\,\bigr\}.
+\]
+To store the function $f:P\to \N$ needed by Theorem~\ref{th:pref}, we define a subset of $P$:
+\[
+Q=\bigcup_{\text{node $\alpha$}}\min{}_\preceq\{\,p\in P\mid n_\alpha\preceq p\preceq e_\alpha\,\}
+\]
+In other words, for every node we take the shortest string in $P$ that sits between the name and the extent
+of the node (if any). We can map every element $q\in Q$ to $|n_{\exit q}|$ in space $O(n\log w)$ as $|Q|\leq n$.
+Then, we map every $p\in P$ to smallest $i$ such that $p[0\..w-2^{2^i})\in Q$.
+This map takes $O(n\log\log w\log\log\log w)=O(n\log w)$ bits. To compute $f(p)$, we first compute the index $i$ using 
+the second map, and then query the first map using $p\bigl[0\..w-2^{2^i}\bigr)$. 
+
+Algorithm~\ref{algo:pred-short} probes prefixes of decreasing lengths in the set
+$X$. More precisely, at each step we will probe a prefix $p$ of length $t =
+w-2^{2^i}$ of the query string $x$; if this probe fails, then $p+1$ and finally
+$p-1$ are probed (if they exist). If we succeed in the first case, we have found
+a valid prefix of $x$ in the trie, and we can proceed with a fat binary search.
+Otherwise, no element is prefixed by $x$, and if by any chance an element is prefixed by $p-1$ or $p+1$ we can easily
+locate its predecessor.
+ 
+ \iffalse
+\begin{Algorithm}
+\smallskip\textbf{Input:} a nonempty string $x\in 2^w$
+
+\textbf{Output:} the index $i$ such that $S[i]=x^-$ 
+\vspace{-1.5em}
+\begin{tabbing}
+\setcounter{prgline}{0}
+\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
+\pl $i \leftarrow 0$
+\pl \WHILE $2^{2^i} \leq w/2$ \DO
+\pl\> $p \leftarrow x\bigl[0\..w-2^{2^i}\bigr)$
+\pl\>$t \leftarrow \hat f(p)$
+\pl\>\IF $t \neq \bot$ 
+\pl\>\> $e \leftarrow \extent(x[0\..t))$
+\pl\>\> \IF $e\prec x$ \RETURN $\fbs^-(x,|e|,|x|)$ \COMMENT{We found a long extent}
+\pl\>\> \RETURN $\pred(x,t)$ \COMMENT{We exit at	the node of name $x[0\..t)$}
+\pl\> \FI
+\pl\> $t \leftarrow \hat f(p+1)$
+\pl\> \IF $t \neq \bot$ \RETURN $\lrange((p+1)[0\..t))-1$ \COMMENT{$x^-$ is the
+predecessor of $p+1$} \pl\> $t \leftarrow \hat f(p-1)$
+\pl\> \IF $t \neq \bot$ \RETURN $\rrange((p-1)[0\..t))$  \COMMENT{$x^-$ is the
+successor of $p-1$} \pl\OD
+\pl\RETURN $\fbs^-(x,0,|x|)$ \COMMENT{Standard search (we found no
+prefix long enough)}
+\end{tabbing}
+\caption{\label{algo:pred-short}Short-distance speedup.}
+\end{Algorithm}
+\fi
+
+More precisely, it turns out that:
+\begin{theorem}
+Algorithm~\ref{algo:pred-short} returns the predecessor of $x$
+in time $O(\log\log d(x,S))$, and requires an index of $O(n \log w )$
+bits of space (in addition to the space needed to store the elements of $S$).
+\end{theorem}
+\begin{proof}
+First we show that the algorithm is correct. If we exit at the first return
+instruction, $e$ is a valid extent and a prefix of $x$, so we start correctly a
+fat binary search. At the second return instruction we know the $x[0\..t)$ is
+the name node $\alpha$, but the extent of $\alpha$ is not a prefix of $x$, so
+$x$ exits exactly at $\alpha$, and again we return the correct answer. If $p+1$ is a valid prefix of some element of $S$, but $p$ is not, then the predecessor
+of $p$ is the predecessor of the least element prefixed by $p+1$, which we
+return (analogously for $p-1$).
+
+By Lemma~\ref{lemma:hitpref}, we will hit a prefix in our set $P$ as soon as
+$w-2^{2^i}\leq w-\log d(x,S)$, that is, $i>\log\log\log d(x,S)$. If $i$ is the
+smallest integer satisfying the latter condition, then $i-1\leq \log\log\log
+d(x,S)$, so $2^{2^i}\leq (\log d(x,S))^2$, which guarantees that the fat binary
+search, which starts from an extent of length at least $|e| \geq t \geq
+w-2^{2^i} \geq w-(\log d(x,S))^2$, will complete in time $O(\log
+b-a)=O(\log\log d(x,S))$ (see Theorem~\ref{thm:correctnessfbs}). If we exit from the loop,
+it means that $i>\log\log\log d(x,S)$ implies $2^{2^i}>w/2$, hence
+$(\log d(x,S))^2>w/2$, so the last fat binary search (that takes $O(\log w)$
+steps to complete) is still within our time bounds.
+\end{proof}
+
+\subsection{Long-distance predecessor algorithm}
+\label{sec:long}
+
+We now discuss Algorithm~\ref{algo:pred-long}, whose running time depends on long
+distances. Let $P$ be the set obtained by ``cutting''
+every internal extent $e_\alpha$ to the length of the smallest power of $2$ (if
+any) in the skip interval of $\alpha$; more precisely:
+\[
+	P=\bigcup_\text{$\alpha$ internal}\{\,e_\alpha[0\..2^k) \mid 2^k \in
+	[|n_\alpha|\..|e_\alpha|] \text{ and $k$ is the smallest possible}\,\}.
+\]
+where $\alpha$ ranges over all nodes. Since this time we
+have at most one prefix per node, $|P|=O(n)$, so the function $f$ required by
+Theorem~\ref{th:pref} can be stored in $O(n\log w)$ bits. 
+
+Algorithm~\ref{algo:pred-long} keeps track of the length $a$ of an
+internal extent that is known to be a prefix of $x$. At each step, we try to
+find another extent by probing a prefix of $x$ whose length is the smallest power of two larger than
+$a$. Because of the way the set $P$ has been built, we can miss the longest
+prefix length at most by a factor of two. 
+
+\begin{theorem}	
+\label{thm:pred-long}
+Algorithm~\ref{algo:pred-long} returns the predecessor of an input string $x$
+in time $O(\log(w-\log D(x,S)))$, and requires an index of $O(n \log w)$ bits of space (in addition to the space needed to store the elements of $S$).
+\end{theorem}
+\begin{proof}
+First we show that the algorithm is correct. It can be easily seen that at each
+step $a$ is either 0 or the length of an internal extent that is a prefix of
+$x$. Moreover, if there is an internal extent of length at least $m$ that is
+a prefix of $x$, then $t\neq\bot$, so we if we exit at the first return
+instruction, the fat binary search completes correctly. If $t\neq \bot$,
+we know that $x[0\..t)$ is the name of a node $\alpha$
+(because $(a\..w)$ is a union of consecutive skip intervals, and the smallest power of two in such $(a\..w)$ is
+a fortiori the smallest power of two in a skip interval): if  
+$x$ is smaller than the smallest leaf
+under $\alpha$ (or larger than the largest such leaf), we immediately know the
+predecessor and can safely return with a correct value. The return instruction
+at the exit of the loop is trivially correct.
+
+Observe that when $m>w-\log D(x,S)$
+either the string $x[0\..m)$ will not be in $\Pref S$ (because of
+Lemma~\ref{lemma:shortinprefs}) and thus $t=\bot$, or $x$ will be larger (or
+smaller) than every element of $S$ prefixed by $x[0\..t)$, which will cause the
+loop to be interrupted at one of the last two if instructions. 
+Since $m$ gets at
+least doubled at each iteration, this condition will take place in at most $\log(w-\log D(x,S))$ iterations; moreover, $m\leq 2a$ (because there is always a power of 2 in the interval $(a\..2a]$), so the fat binary search in the first
+return will take no more than $\log(m-a)\leq \log a\leq \log (w-\log D(x,S))$.
+If the loop exits naturally, then there is a prefix of $x$ belonging to $\Pref
+S$ and longer than $w/2$, hence $w-\log D(x,S)\geq w/2$ and the fat binary
+search at the end of the loop will end within the prescribed time bounds.
+\end{proof}
+
+\iffalse
+\begin{Algorithm}
+\smallskip\textbf{Input:} a nonempty string $x\in 2^w$
+
+\textbf{Output:} the index $i$ such that $S[i]=x^-$ 
+\vspace{-1.5em}
+\begin{tabbing}
+\setcounter{prgline}{0}
+\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
+\pl $a \leftarrow 0$
+\pl\WHILE $a<w/2$ \DO
+\pl\> $m \leftarrow \text{least power of 2 in $(a\..w)$}$
+\pl\> $t \leftarrow \hat f(x[0\..m))$
+\pl\> \IF $t = \bot$ \RETURN $\fbs^-(x,a,m)$ \COMMENT{We obtained the longest possible prefix} 
+\pl\> $p \leftarrow x[0\..t)$
+\pl\> \IF $S[\lrange(p)]\geq x$ \RETURN $\lrange(p)-1$ 
+\pl\> \IF $S[\rrange(p)]<x$ \RETURN $\rrange(p)$
+\pl\> $a \leftarrow |\extent(p)|$ \COMMENT{This is a valid extent}
+\pl\OD 
+\pl\RETURN $\fbs^-(x,a,w)$
+\end{tabbing}
+\caption{\label{algo:pred-long}Long-distance speedup.}
+\end{Algorithm}
+\fi
+
+Finally, we can combine our improvements for short and long distances, obtaining an algorithm that is
+efficient when the input $x$ is either very close to or very far from $x^-$ or $x^+$:
+\begin{corollary}
+It is possible to compute the predecessor of a string $x$ in a set $S$
+in time $O(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\})$, using an index that
+requires $O(n \log w)$ bits of space (in addition to the space
+needed to store the elements of $S$).
+\end{corollary}
+
+\section{Globally sensitive predecessor search}
+
+We can apply Theorem~\ref{thm:pred-long} to improve exponentially over the bound
+described in~\cite{DemaineJoPa04}, which gives an algorithm whose running time
+depends on the largest and smallest distance between the elements of $S$. 
+More precisely, let
+$\Delta_M$ and $\Delta_m$ be, respectively, the largest and smallest distance
+between two consecutive elements of $S$.
+\begin{corollary}
+\label{cor:deltadelta}
+Using an index of $O(n\log w)$ bits, it is possible to answer predecessor
+queries in time $O(\log\log(\Delta_M/\Delta_m))$.
+\end{corollary}
+\begin{proof}
+We use a standard ``universe reduction'' argument, splitting 
+the universe $2^w$ by grouping strings sharing the most significant $\lceil \log
+n\rceil$ bits. Each subuniverse $U_i$ has size $2^{w-\lceil \log
+n\rceil}=O(2^w/n)$, and we let $S_i=S\cap U_i$. Using a constant-time
+prefix-sum data structure we keep track of the rank in $S$ of the smallest
+element of $S_i$, and we build the indices that are necessary for
+Algorithm~\ref{algo:pred-long} for each $S_i$ (seen as a set of strings of
+length $w-\lceil \log
+n\rceil$). Thus, we can answer a query $x$ in time $O(\log(w-\lceil \log
+n\rceil -\log D(x,S_i))$, where $U_i$ is the subuniverse containing $x$. Now
+note that $\Delta_M\geq 2^w/n$, and that $\Delta_m\leq x^+-x^-
+=(x^+-x)+(x-x^-)\leq 2D(x,S)\leq 2D(x,S_i)$ (unless $x$ the smallest or the
+largest element of $S_i$, but this case can be dealt with in constant time). The
+bound follows immediately.
+\end{proof}
+
+\section{Finger predecessor search}
+
+We conclude with a generalisation of long-distance search that builds on previous results~\cite{BelazzouguiBoPaVi11b}.
+Using $O(n w^{1/c})$ bits (for any $c$) it
+is possible to answer \emph{weak prefix search} queries in constant time. A weak
+prefix search query takes a prefix $p$ and returns the leftmost and rightmost
+index of elements of $S$ that are prefixed by $p$; if no such element exists,
+the results are unpredictable (hence the ``weak'' qualifier), but a single access to the set $S$ is sufficient
+to rule out this case and always get a correct result. Thus, we will be
+able to compute $\lrange(-)$, $\rrange(-)$ and $\extent(-)$ on arbitrary
+elements of $\Pref S$ in constant time. As a consequence, also $\pred(x,t)$ can
+be extended so to return a correct value for every $t$ such that
+$x[0\..t)\in\Pref S$.
+
+The basic idea of Algorithm~\ref{algo:finger} is that of using a \emph{finger}
+$y\in S$ to locate quickly an extent $e$ that is a prefix of $x$ with the guarantee that $w-|e|\leq\log|x-y|$. The extent
+is then used to accelerate an algorithm essentially identical
+Algorithm~\ref{algo:pred-long}, but applied to a reduced universe (the strings
+starting with $e$); the running time thus becomes
+$O(\log(w-|e|-\log D(x,S)|)=O(\log(\log|x-y|-\log D(x,S)))$.
+
+\iffalse
+\begin{Algorithm}
+\smallskip\textbf{Input:} a nonempty string $x\in 2^w$ and a $y\in S$ such that $y<x$
+
+\textbf{Output:} the index $i$ such that $S[i]=x^-$ 
+\vspace{-1.5em}
+\begin{tabbing}
+\setcounter{prgline}{0}
+\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
+\pl $t\leftarrow \max\{\,s\mid y[0\..s)+1\preceq x\,\}$
+\pl $e\leftarrow\extent(y[0\..t)+1)$
+\pl\IF $y[0\..t)+1\not\preceq e$ \RETURN $\rrange(y[0\..t))$
+\COMMENT{$y[0\..t)+1\not\in\Pref S$} \pl\IF $e\not\prec x$ \RETURN $\pred(x,t)$
+\COMMENT{$x$ exits between $y[0\..t)+1$ and $e$} \pl $a \leftarrow 0$
+\COMMENT{Now $e\prec x$ and $w-|e|\leq\log|x-y|$} \pl\WHILE $a<(w-|e|)/2$ \DO
+\pl\> $m \leftarrow \text{least power of 2 in $(a-|e|\..w-|e|)$}$
+\pl\> $p \leftarrow x[0\..m+|e|)$
+\pl\> \IF $p\not\in\Pref S$ \RETURN $\fbs^-(x,a+|e|,m+|e|)$	 
+\pl\> \IF $S[\lrange(p)]\geq x$ \RETURN $\lrange(p)-1$
+\pl\> \IF $S[\rrange(p)]<x$ \RETURN $\rrange(p)$
+\pl\> $a \leftarrow |\extent(p)|-|e|$ \COMMENT{This is a valid extent}
+\pl\OD 
+\pl\RETURN $\fbs^-(x,a+|e|,w)$
+\end{tabbing}
+\caption{\label{algo:finger}Long-distance finger-search speedup.}
+\end{Algorithm}
+\fi
+
+
+\begin{theorem}
+\label{th:finger}
+Algorithm~\ref{algo:finger} returns the predecessor of an input string $x$ given
+a finger $y\in S$, with $y<x$, in time $O(\log(\log|x-y|-\log D(x,S)))$ using an 
+index of $O(n w^{1/c})$ bits 
+of space, for any $c$ (in addition to the space needed to store the elements of $S$).
+\end{theorem}
+\begin{proof}
+First we show that the algorithm is correct. 
+If we exit at the first return instruction, $y[0\..t)+1$ is
+not in $\Pref S$, which implies that $x^-$ is prefixed by $y[0\..t)$, and thus
+the output is correct. If we exit at the second return instruction, $x$
+exits at the same node as $y[0\..t)+1=x[0\..t)$. Otherwise, $e$ is an extent
+that is a proper prefix of $x$, and the remaining part of the algorithm
+is exactly Algorithm~\ref{algo:pred-long} applied to the set of strings of $S$ 
+that are prefixed by $e$, with $e$ removed (the algorithm is slightly
+simplified by the fact that we can test membership to $\Pref S$ and compute
+extents for every prefix). Correctness is thus immediate.
+
+All operations are constant time, except for the last loop. Note that as soon as
+$m+|e|\geq w-\log D(x,S)$ the loop ends or a prefix of $x$ is found (as in the
+proof of Algorithm~\ref{algo:pred-long}), and this requires no more than $\log(w-|e|-\log
+D(x,S))$ iterations; moreover, $m\leq 2a$ (because there is always
+a power of 2 in the interval $(a\..2a]$), so the fat binary search in the first
+return will take no more than $\log(m-a)\leq \log a\leq \log (w-|e|-\log D(x,S))$.
+If the loop exits naturally, then there is a prefix $e'$ of $x$ belonging
+to $\Pref S$ and longer than $(w+|e|)/2$, hence by
+Lemma~\ref{lemma:shortinprefs}, $w-\log D(x,S)\geq (w+|e|)/2$; the fat binary search at the
+end takes time $O(\log (w-(a+|e|)))=O(\log (w-|e'|))=O(\log( w/2 -
+|e|/2)))=O(\log(w-|e|-\log D(x,S)))$, within the prescribed time bounds.
+\end{proof}
+
+\section{Delta-Fast Abstract}
+Let $w \in \N$ and $U = \{0, 1, \dots, 2^w-1\}$ be a 
+bounded universe of $w$-bit integers.  We present a 
+dynamic data structure for predecessor searching in 
+$U$.  Our structure needs $O(\log \log \Delta)$ time 
+for queries and $O(\log \log \Delta)$ expected time 
+for updates, where $\Delta$ is the difference between 
+the query element and its nearest neighbor in the 
+structure. Our data structure requires linear space. 
+This improves a result by Bose~\etal [CGTA, 46(2), pp.~181--189].
+
+The structure can be applied for answering approximate nearest
+neighbor queries in low dimensions and for dominance queries on
+a grid.
+
+\section{Introduction}
+
+Predecessor searching is one of the oldest problems in 
+theoretical computer science~\cite{CormenLeRiSt09,Knuth98}.
+Let $U$ be a totally ordered universe. The task
+is to maintain a set $S \subseteq U$,
+while supporting
+\emph{predecessor} and \emph{successor} queries: 
+given $q \in U$, find the largest element in $S$ 
+smaller than $q$ ($q$'s predecessor) or the 
+smallest element in $S$ larger than $q$
+($q$'s successor). In the \emph{dynamic}
+version of the problem, we also want to 
+be able to modify $S$ by inserting and/or 
+deleting elements.
+
+In the \emph{word-RAM } model of computation,
+all input elements are $w$-bit words, where
+$w \in \N$ is a parameter. Without loss of 
+generality, we may assume that $w$ is a power 
+of $2$. We are allowed to manipulate the input 
+elements at the bit level, in constant time per 
+operation. In this case, we may assume that the 
+universe is $U = \{0, \dots, 2^{w}-1\}$. 
+A classic solution for predecessor searching on the
+word-RAM is due to van Emde Boas, who
+described a dynamic data structure that
+requires space $O(n)$ and supports insertions,
+deletions, and predecessor queries in $O(\log\log |U|)$ 
+time~\cite{vEmdeBoas77,vEmdeBoasKaZi76}.
+
+In 2013, Bose~\etal~\cite{BoseDoDuHoMo13} described
+a word-RAM data structure for the predecessor
+problem that is \emph{local} in the following sense.
+Suppose our data structure currently contains the
+set $S \subseteq U$, and let $q \in U$ be a query
+element.  Let $q^+ := \min\{s \in S \mid s \geq q \}$ and
+$q^- := \max\{s \in S \mid s \leq q \}$ be the 
+successor and the predecessor of $q$ in $S$, and let
+$\Delta= \min\{|q- q^-|, |q-q^+|\}$ be the distance
+between $q$ and its nearest neighbor in $S$. Then, 
+the structure by Bose \etal can answer predecessor 
+and successor queries in $O(\log\log \Delta)$ time.
+Their solution requires $O(n \log\log\log|U|)$ words 
+of space, where $n = |S|$ is the size of the 
+current set. Bose~\etal apply their structure 
+to obtain a fast data structure for approximate nearest 
+neighbor queries in low dimensions and for answering
+dominance and range searching queries on a grid.
+
+Here, we show how to obtain a data structure with similar
+guarantees for the query and update times that reduces the
+space requirement to $O(n)$. This solves an open problem 
+from~\cite{BoseDoDuHoMo13}. Furthermore,  this also improves the space 
+requirement for data structures for nearest neighbor searching
+and dominance reporting.
+Full details and pseudocode for all the algorithms and
+data structures described here can 
+be found in the Master's thesis of the first author~\cite{Ehrhardt15}.
+Belazzougui~\etal give a linear space bound for distance-sensitive
+queries in the static setting, using almost the same 
+techniques as in the present paper~\cite{BelazzougiBoVi12}. Our 
+result was obtained independently from the work of 
+Belazzougui~\etal
+
+\section{Preliminaries}
+\label{sec:prelim}
+
+We begin by listing some known structures and background information
+required for our data structure.
+
+\paragraph{Compressed Tries.}
+Our data structure is based on \emph{compressed
+tries}~\cite{CormenLeRiSt09}. These are defined as
+follows: we interpret the elements from $S$ as bitstrings 
+of length $w$ (the most significant bit being in the leftmost
+position). The \emph{trie} $T'$ for $S$ is a binary tree
+of height $w$. Each node $v \in T'$ corresponds
+to a bitstring $p_v \in \{0,1\}^*$. The root $r$ has
+$p_r = \eps$. For each inner node $v$, the left
+child $u$ of $v$  has $p_u = p_v0$, and the
+right child $w$ of $v$ has $p_w = p_v1$ (one of the
+two children may not exist). The bitstrings of the 
+leaves correspond to the elements of $S$, and
+the bitstrings of the inner nodes are prefixes
+for the elements in $S$, see Figure~\ref{fig:trie}.
+
+\begin{figure}
+  \centering
+  \includegraphics{trie}
+  \caption{A trie (left) and a compressed trie (right) for the set 
+  000, 100, 110, 111. The longest common prefix of 101 is  10. The 
+  lca of 101 in the compressed trie
+    is the node labeled 1.}
+  \label{fig:trie}
+\end{figure}
+
+The \emph{compressed trie} $T$ for $S$ is obtained
+from $T'$ by contracting each maximal path of nodes
+with only one child into a single edge. 
+Each inner node in $T$ has exactly two children, and
+consequently $T$ has $O(n)$ nodes.
+Maybe somewhat unusually, in the following, the 
+\emph{height} and \emph{depth} of a node $v$ in $T$ 
+will refer to the corresponding
+height and depth in the (uncompressed) trie $T'$.
+This convention will make the description of the operations more
+convenient.
+
+Let $q \in \{0,1\}^*$ be a bitstring of length at most $w$.
+The \emph{longest common prefix} of $q$ with $S$, $\lcp_S(q)$,
+is the longest prefix that $q$ shares with an element 
+in $S$. We say that $q$ \emph{lies on an edge}
+$e = (u, v)$ of $T$ if $p_u$ is a prefix of $q$ and
+$q$ is a proper prefix of $p_v$. If $\lcp_S(q)$
+lies on the 
+edge $(u,v)$, we call $u$ the \emph{lowest common
+ancestor} of $q$ in $T$, denoted by
+$\lca_T(q)$. One can show that $\lca_T(q)$ is uniquely
+defined.
+
+\paragraph{Associated Keys.}
+Our algorithm uses the notion of
+\emph{associated keys}. This notion
+was introduced in the context of 
+\emph{$z$-fast tries}~\cite{BelazzouguiBoVi10,Ruzic09},
+and it is also useful in our data structure.
+
+Associated keys provide a quick way to compute $\lca_T(q)$,
+for any element $q \in U$.
+A natural way to find $\lca_T(q)$ is
+to do binary search on the depth of $\lca_T(q)$:
+we initialize $(l,r) = (0,w)$ and let 
+$m = (l+r)/2$. We denote by $q' = q_0\dots q_{m-1}$ 
+the leftmost $m$ bits of $q$, and we check whether
+$T$ has an edge $e = (u,v)$ such that $q'$ lies on $e$.
+If not, we set $r = m$, and we continue.
+Otherwise, we determine if $u$ is $\lca_T(q)$, by
+testing whether $p_v$ is not a prefix of $q$.
+If $u$ is not $\lca_T(q)$, we set $l = m$ and continue.
+In order to perform this search quickly,
+we need to find the edge $e$ that
+contains a given prefix $q'$, if it exists. For this,
+we precompute for each edge $e$ of $T$
+the first time that the binary search
+encounters a prefix that lies on $e$. This
+prefix is uniquely determined and depends only on 
+$e$, not on the specific string $q$ that we are looking 
+for. We let $\alpha_e$ be
+this prefix, and we call $\alpha_e$ the \emph{associated key}
+for $e = (u,v)$, see Figure~\ref{fig:binsearch}. 
+\begin{figure}
+\centering
+\includegraphics{binsearch_assoc_key_main}
+\caption{The associated key $\alpha_e$ of an edge $e$:
+we perform a binary search on the height of
+$\lcp_S(q)$ in $T$. The \emph{associated key}
+of an edge $e$ is the prefix of $\lcp_S(q)$ in which the
+search first encounters the edge $e$. }
+\label{fig:binsearch}
+\end{figure}
+
+
+The binary search needs $\log w$ steps, and 
+since we assumed that $w$ is a power of two,
+each step determines the next bit in the binary 
+expansion of the \emph{length} of $\lcp_S(q)$.
+Thus, the associated key of an edge $e$
+can be computed in $O(1)$ time on a word RAM 
+as follows: consider the $\log w$-bit binary 
+expansions $\ell_u = |p_u|_2$ and  $\ell_v = |p_v|_2$ of the
+\emph{lengths} of the prefixes
+$p_u$ and $p_v$, and let $\ell'$ be the
+longest common prefix of $\ell_u$ and
+$\ell_v$. We need to determine the first
+step when the binary search can distinguish between
+$\ell_u$ and $\ell_v$. Since $\ell_u < \ell_v$,
+and since the two binary expansions differ in the
+first bit after $\ell'$,
+it follows that $\ell_u$ begins with $\ell'0$ and
+$\ell_v$ begins with $\ell'1$. Thus, let $\ell$ be obtained
+by taking $\ell'$, followed by $1$ and
+enough $0$'s to make a $\log w$-bit
+word. Let $l$ be the number encoded by $\ell$.
+Then, the associated key $\alpha_e$ consists of the 
+first $l$ bits of $p_v$;
+see~\cite{BelazzouguiBoVi10,Ehrhardt15,Ruzic09} for more details.
+
+\paragraph{Hash Maps.}
+Our data structure also makes extensive use of
+hashing. In particular, we will maintain several
+succinct hashtables that store additional
+information for supporting fast queries.
+For this, we will use a hashtable described
+by Demaine~\etal~\cite{DemaineMePaPa06}.
+The following theorem summarizes the properties
+of their data structure.
+
+\begin{theorem}\label{thm:succinct_retrieval_only_hashtable}
+For any $r \geq 1$, there exists a dynamic dictionary that
+stores entries with keys from $U$ and with associated
+values of $r$ bits each.
+The dictionary supports updates and queries in $O(1)$ time,
+using $O(n \log\log (|U|/n) + nr)$ \emph{bits} of space.
+The bounds for the space and the queries are
+worst-case, the bounds for the updates hold with
+high probability.\qed
+\end{theorem}
+
+\section{Static $\Delta$-fast Tries}
+\label{sect:delta-fast_trie}
+
+We are now ready to describe our data structure 
+for the static case. In the next section, we will
+discuss how to add support for insertions and
+deletions.
+
+\subsection{The Data Structure}
+Our data structure is organized as follows:
+let $S \subseteq U$, $|S| = n$, be given.
+We store $S$ in a compressed trie
+$T$. The leaves of $T$ are
+linked in sorted order. Furthermore, 
+for each node $v$ of $T$, let $T_v$ be the
+subtree rooted at $v$. Then, $v$ stores pointers 
+to the smallest and the largest leaf in 
+$T_v$. To support the queries, we store 
+three additional hash maps: $H_\Delta$, $H_z$,
+and $H_b$.
+
+First, we describe the hash map $H_\Delta$.
+Set $m = \log\log w$. For
+$i = 0, \dots, m$, we let
+$h_i = 2^{2^i}$ and  
+$d_i = w - h_i$. 
+The hash map $H_\Delta$ stores the following
+information: for each $s \in S$ and each
+$d_i$, $i = 1, \dots, m$,
+let $s_i = s_0 \dots s_{d_i-1}$ be the leftmost
+$d_i$-bits of $s$ and let $e = (u,v)$ be
+the edge of $T$ such that $s_i$ lies
+on $e$.
+Then, $H_\Delta$ stores the entry
+$s_i \mapsto u$.
+
+Next, we describe the hash map $H_z$.
+It is defined similarly as the hash map
+used for $z$-fast tries~\cite{BelazzouguiBoVi10,Ruzic09}.
+For each edge $e$ of $T$, let $\alpha_e$ be
+the associated key of $e$, as explained in 
+Section~\ref{sec:prelim}.
+Then, $H_z$ stores the entry $\alpha_e \mapsto e$.
+
+
+Finally, the hash map $H_b$ is used to implement
+a second layer of indirection that lets us achieve
+linear space. It will be described below.
+
+\subsection{The Predecessor Query}
+\label{sec:staticquery}
+
+Let $q \in U$ be the query, and let
+$q^-$ and $q^+$ be the predecessor and
+the successor of $q$ in $S$, as described above.
+We first show how to get a running time
+of $O(\log\log \Delta)$ for the queries, with  
+$\Delta = |q - q^+|$.  In Theorem~\ref{thm:staticresult}, we will 
+see that this can easily be improved
+to $\Delta = \min\{|q - q^-|, |q - q^+|\}$.
+
+The predecessor search works in several 
+\emph{iterations}. In iteration $i$, we consider
+the prefix $q_i$ that consists of the first $d_i$ 
+bits of $q$.
+
+First, we check whether 
+$H_\Delta$ contains an entry for
+$q_i$. If so, we know that $T$ contains
+an edge $e$ such that $q_i$ lies on $e$.
+Hence, $q_i$ must be  a prefix of $\lcp_S(q)$.
+If one of the endpoints of $e$ happens to be
+$\lca_T(q)$, we are done.
+Otherwise, we consider the two edges emanating from  the lower
+endpoint of $e$, finding the edge $e'$ that lies on
+the path to $q$.
+We take the associated key $\alpha_{e'}$ of $e'$,
+and we use it to continue the binary search
+for $\lca_T(q)$, as described in
+Section~\ref{sec:prelim}. Since $|q_i| = d_i$,
+this binary search takes 
+$O(\log (w - d_i)) = O(\log h_i)$ steps to complete.
+Once the lowest common ancestor $v = \lca_T(q)$ is 
+at hand,  we can find the predecessor of $q$ in $O(1)$ 
+additional time: it is either the rightmost element in $T_v$,
+the predecessor of the leftmost element in $T_v$, or the 
+rightmost element in the left subtree of $v$. Given the 
+pointers stored with $v$ and the leaves of $T$, all these
+nodes can be found in $O(1)$ time.
+
+If $H_\Delta$ contains no entry for
+$q_i$ and if $q_i$ does not consist
+of all $1$'s, we check if $H_\Delta$ contains
+an entry for $q_i + 1$.
+Notice that $q_i+1$ is the successor of $q_i$. 
+If such an entry exists,
+we first obtain $u = H_\Delta[q_i +1]$, and the child $v$ of 
+$u$ such that $q_i + 1$ lies on the edge $e = (u,v)$.
+Then, we follow the pointer to the leftmost element of
+$T_v$. This is the successor $q^+$ of $q$. 
+The predecessor $q^-$ can then be found by following the 
+leaf pointers. This takes $O(1)$ time overall.
+
+Finally, if there is neither an entry for $q_i$
+nor for $q_i+1$, we continue 
+with iteration $i+1$, see Figure~\ref{fig:query}.
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.5]{query}
+\caption{The query algorithm: first we perform an
+exponential search from the lowest level, to find a prefix
+of $q_k$  or $q_k+1$ (left). If a prefix $q_{k}$ is found,
+we perform a binary search for $\lca_T(q)$ (middle), which can then
+be used to find the predecessor and successor of $q$ (right). If
+a prefix $q_k+1$ is found, the successor and predecessor 
+can be found immediately (not shown).}
+\label{fig:query}
+\end{figure}
+
+From the above discussion, it follows that
+the total time for the predecessor
+query is $O(k + \log h_k)$, where $k$ is the number of 
+iterations and $\log h_k$ is the worst-case time 
+for the predecessor search once one of the lookups 
+in an iteration succeeds. 
+By our predecessor algorithm, we know that $S$ contains no element with
+prefix $q_{k-1}$ or $q_{k-1} + 1$, but an element with
+prefix $q_k$ or $q_k + 1$. Thus, there must be
+at least $2^{w - d_k} = 2^{h_k}$ consecutive elements in 
+$U\setminus S$ following $q$. By our definition of $h_k$, it follows that
+$\Delta \geq 2^{h_{k-1}} = 2^{2^{2^{k-1}}}$, so 
+$k \leq 1 + \log\log\log \Delta$.
+Furthermore, since $h_k = 2^{2^k} = \left(2^{2^{k-1}}\right)^2 
+=  (h_{k-1})^2$, 
+it follows that $h_k = O(\log^{2} \Delta)$.
+
+\subsection{Obtaining Linear Space}
+We now analyze the space requirement for our
+data structure.
+Clearly,  the  trie $T$ and the
+hash map $H_z$ require $O(n)$ words of space.
+Furthermore, as described so far, the number of 
+words needed for
+$H_\Delta$ is $O(n \log\log w)$, since 
+we store at most $n$ entries for each 
+height $h_i$, $i = 0, \dots, m = \log\log w$.
+
+Using a trick due to P\v{a}tra\c{s}cu~\cite{Patrascu10}, 
+we can introduce another level of indirection to reduce 
+the space requirement to  $O(n)$.
+The idea is to store in $H_\Delta$ the \emph{depth}
+$d_u$ of each branch node $u$ in $T_\Delta$, instead of storing 
+$u$ itself (here, we mean the depth in the
+original trie, i.e., the length of the prefix $p_u$). 
+We then use an additional hash map 
+$H_b$ to obtain $u$.
+This is done as follows:
+when trying to find the branch node $u$ for a given
+prefix $q_i$, we 
+first get the depth $d_u = |p_u|$ of $u$ 
+from $H_\Delta$. After that, we look up the branch
+node $u = H_b[q_0 \dots q_{d_u-1}]$ from the hash map 
+$H_b$. Finally, we check whether $u$ is actually the 
+lowest branch node of $q_i$. If any of those steps fails,
+we return $\bot$.
+
+Let us analyze the needed space: clearly, $H_b$ needs
+$O(n)$ words, since it stores $O(n)$ entries.
+Furthermore,
+we have to store $O(n \log\log w)$ entries in 
+$H_\Delta$, each mapping a prefix $q_i$ to the depth of 
+its lowest branch node. This depth requires
+$\lceil \log w \rceil$ bits.
+By Theorem~\ref{thm:succinct_retrieval_only_hashtable},
+a retrieval only hash map for $n'$ items and $r$ bits 
+of data needs $O(n'\log\log \frac{|U|}{n'} + n'r)$ bits.
+Therefore, the space 
+\emph{in bits} for $H_\Delta$ is proportional to
+\begin{align*}
+&\phantom{=} n \log\log w \cdot \log\log \frac{|U|}{n \log\log w} +
+n \log\log w \cdot \lceil \log w \rceil\\
+&= O(n \log\log w \cdot \log w)\\
+&= o(n\cdot w),
+\end{align*}
+using $n' = n\log\log w$, $r = \lceil \log w \rceil$ and $w = \log |U|$. 
+Thus, we can store $H_\Delta$ in 
+$O(n)$ words of $w$ bits each. The following lemma summarizes
+the discussion
+
+\begin{lemma}
+\label{lemma:delta_linear_space}
+The $\Delta$-fast trie needs $O(n)$ words space.
+\end{lemma}
+
+\subsection{Putting it Together}
+
+We can now obtain our result for the static predecessor problem.
+
+\begin{theorem}\label{thm:staticresult}
+Let $U = \{0, \dots, 2^{w}-1\}$ and let
+$S \subseteq U$, $|S| = n$.
+The static $\Delta$-fast trie for $S$ requires
+$O(n)$ words of space, and it can answer
+a static predecessor query for an element $q \in U$ on $S$ in time
+$O(\log \log \min\{|q-q^-|, |q-q^+|\})$,
+where $q^-$ and $q^+$ denote the predecessor
+and successor of $q$ in $S$.
+The preprocessing time is 
+$O(n \log\log \log |U|)$, assuming that
+$S$ is sorted.
+\end{theorem}
+
+\begin{proof}
+The regular search for $q \in S$ can be done in 
+$O(1)$ time by a lookup in $H_z$. 
+We have seen that the predecessor of $q$
+can be found in $O(\log \log |q-q^+|)$ time.
+A symmetric result also holds for 
+successor queries.
+In particular, we can achieve query time 
+$O(\log \log |q-q^-|)$  by checking for
+$H_\Delta[q_i-1]$ instead of $H_\Delta[q_i+1]$ in the 
+query algorithm. 
+
+By interleaving the two searches,
+we obtain the desired running time of 
+$O(\log\log \min\{|q - q^-|, |q - q^+|\})$. 
+Of course, in a practical implementation, it would be 
+more efficient to check directly for $H_\Delta[q_i-1]$
+and $H_\Delta[q_i+1]$ in the query algorithm.
+
+The trie $T$ and the hash maps $H_z$
+and $H_b$ can be computed in $O(n)$ time, given that
+$S$ is sorted.
+Thus, the preprocessing time is dominated by the time to fill the 
+hash map $H_\Delta$.  Hence, the preprocessing needs
+$O(n\log\log\log |U|)$ steps, because $O(n\log\log w)$ nodes 
+have to be
+inserted into $H_\Delta$. 
+By Lemma~\ref{lemma:delta_linear_space}, the space requirement
+is linear.
+\end{proof}
+
+\section{Dynamic $\Delta$-fast tries}
+
+We will now explain how to extend our data
+structure to the dynamic case. 
+The basic data structure remains the same, but
+we need to update the hashtables and the trie $T$
+after each insertion and deletion.
+In particular, our data structure requires that
+for each $v$ in $T_v$, we can access the 
+leftmost and the rightmost node
+in the subtree $T_v$.
+In the static case, this could be done simply
+by maintaining explicit pointers from each node
+$v \in T$ to these nodes in $T_v$, letting us find
+the nodes in $O(1)$ time.
+In the dynamic case, we will maintain a data structure
+which allows finding and updating these nodes in
+in $O(\log\log \Delta)$ time.
+
+\subsection{Computing Lowest Common Ancestor}
+
+To perform the update operation, we need a
+procedure to compute the lowest common ancestor 
+$\lca_T(q)$ for any given element $q \in U$. 
+For this, we proceed as in the query algorithm from 
+Section~\ref{sec:staticquery}, but skipping 
+the lookups for $H_\Delta[q_i-1]$ and
+$H_\Delta[q_i+1]$. By the analysis in 
+Section~\ref{sec:staticquery}, this will find 
+$\lca_T(q)$ in time $O(\log \log l)$, where $l$
+is height of $\lca_T(q)$ in $T$.
+
+Unfortunately, it may happen that this height $l$ is as large as $w$,
+even if $q$ is close to an element in the current set $S$.
+To get around this, we use a trick of Bose~\etal~\cite{BoseDoDuHoMo13}.
+Namely, their idea is to perform a random shift of the universe. 
+More precisely, we pick a random number $r \in U$, and we
+add $r$ to all query and update elements that appear in 
+the data structure (modulo $|U|$).
+
+\begin{lemma}[Lemma 4 in \cite{BoseDoDuHoMo13}]
+\label{lemma:delta_lca_loglog_delta}
+Let $x, y \in U$ be two fixed elements in $U$.
+Let $r \in U$ be picked uniformly at random.
+After a random shift of $U$ by $r$, the 
+expected height of the lowest common ancestor of 
+$x$ and $y$ in a compressed trie is $O(\log|x-y|)$.\qed
+\end{lemma}
+
+\begin{corollary}
+\label{cor:delta_fast_expected_lca}
+Let $S \subseteq U$ and let $T$ be a randomly
+shifted $\Delta$-fast trie storing $S$.
+Let $q \in U$. 
+We can find $\lca_T(q)$ in expected time $O(\log\log \Delta)$,
+where $\Delta = \min\{|q - q^+|, |q-q^-|\}$, the elements 
+$q^+$ and $q^-$ being the predecessor and successor of $q$ in $S$.
+The expectation is
+over the random choice of the shift $r$. 
+\end{corollary}
+
+\begin{proof}
+Suppose without loss of generality that $\Delta = |q - q^+|$.
+By Lemma~\ref{lemma:delta_lca_loglog_delta},
+the expected height $h_k$ of the lowest common ancestor of $q$ and $q^+$
+is $O(\log \Delta)$.
+We perform the doubly exponential
+search on the prefixes of $q$, as in Section~\ref{sec:staticquery} 
+(without checking $q_i+1$) to find the height $h_k$. After
+that, we  resume the search for $\lca_T(q)$ on the 
+remaining $h_k$ bits. Since $h_k = O(\log \Delta)$ in expectation,
+it follows by Jensen's inequality that the number $k$
+of loop iterations to find  $h_k$ is $O(\log\log\log \Delta)$
+in expectation. Thus, the expected running time is proportional to
+$k + \log h_k = O(\log\log\Delta)$. 
+\end{proof}
+
+\subsection{Managing the Left- and Rightmost Elements 
+of the Subtrees}
+
+We also need to maintain for each node $v \in T$ the
+leftmost and the rightmost element in the subtree $T_v$.
+In the static case, it suffices to have direct pointers
+from $v$ to the respective leaves, but
+in the dynamic case, we need an additional data structure. 
+
+\begin{figure}
+\centering
+\includegraphics{pathdecomp}
+\caption{For each leaf $v'$ of $T$, the nodes
+$v \in T$ for which $v$ is the leftmost leaf in $T_v$
+if a subpath of a root-to-leaf path in $T$. Considering these
+subpaths for all leaves in $T$, we obtain a \emph{path decomposition}
+of $T$ (shown in bold).}
+\label{fig:pathdecomp}
+\end{figure}
+To do this, we observe the following: let $v' \in T$ be 
+a leaf in $T$. Then, $v'$ is the leftmost (or rightmost)
+leaf in the subtrees of at most $w$ ancestors $v$ of $v'$.
+Furthermore, all these nodes form a subpath (more precisely,
+a prefix) of the path from $v$ to the root, see Figure~\ref{fig:pathdecomp}.
+Hence, if we maintain the nodes of 
+this subpath in a concatenable queue data structure
+(realized by, e.g., a balanced binary tree)~\cite{PreparateSh85},
+we can obtain $O(\log w)$ update and query time
+to find the leftmost (or rightmost) element in $T_v$
+for each $v \in T$.
+However, we need that the update and query time for this
+data structure
+depend on the height $h_i$ (i.e, the remaining bits) 
+of the query node $v$.
+Thus, we partition the possible heights
+$\{0, 1, \dots, w\}$ of the nodes on a 
+subpath into the sets
+$T_{-1} = \{0\}$, $T_i =[2^i, 2^{i+1})$, for $i = 0,\dots,\log w-1$, 
+and $T_{\log w} = \{w\}$.
+Each set is managed by a balanced binary tree, and the 
+roots of the trees are linked together. The height of the $i$-th binary 
+search tree is $\log |T_i| = O(i)$. Furthermore, if a query node
+of height $h$ is given, 
+the set $T_{\lfloor \log h \rfloor}$ is responsible for it, see 
+Figure~\ref{fig:queryds}.
+\begin{figure}
+\centering
+\includegraphics{queryds}
+\caption{The data structure for a subpath. We group the nodes
+in the subpath according to their heights, where the groups
+grow exponentially in size. Each group is represented by a
+balanced tree. The roots are joined in a linked
+list. With this data structure, a node $v$ of height $h$ can
+find the leftmost leaf in the subtree $T_v$ in time $O(\log h)$.}
+\label{fig:queryds}
+\end{figure}
+
+
+Moreover, $T_{-1}$ is a leaf (the depth of that node is $w$) 
+in the trie and therefore the minimum of the whole subpath. Thus, 
+the minimum of a subpath can be found from a given node 
+$v \in T_i$ in $O(i)$ time by following the
+pointers to the root of $T_i$ and the pointers down to $T_{-1}$.
+
+If a node $v$ has $h_k = O(\log \Delta)$ height (remaining bits), 
+the node is within
+the tree $T_{\lfloor \log h_k \rfloor}$. Thus, it takes 
+$O(\log h_k) = O(\log\log\Delta)$ time to find the leftmost
+or rightmost leaf in $T_v$.
+
+Furthermore, we can support the following update operations:
+(i) \textbf{split}: given a subpath $\pi$ and a node $v$ on $\pi$, split 
+the representation of $\pi$ into two representations, one for the 
+\emph{lower} subpath from the leaf up to the child of $v$, and
+one for the \emph{upper} subpath starting from $v$; and (ii) 
+\textbf{join}: given a
+representation of an upper subpath starting at a node $v$ obtained 
+from an operation of type (i), and a representation for 
+a lower subpath up to a child of $v$, join the two representations
+into the representation for a joint subpath.
+Given the data structure, we can support
+both \textbf{split} and \textbf{join} in
+ $O(\log h)$ time, where $h$ is the height of 
+the node $v$ where the operation occurs. 
+This decomposition of $T$ into dynamically changing suppaths
+is similar to the \emph{preferred paths decomposition} of
+Tango trees~\cite{DemaineHaIaPa07}.
+
+\subsection{Performing an Update}
+
+We know from the Lemma~\ref{lemma:delta_lca_loglog_delta}, that 
+the lowest common ancestor of a query element $q$ has expected 
+height $h_k = O(\log \Delta)$.
+
+\begin{lemma}
+\label{lemma:delta_insert}
+Let $S \subseteq U$, and let $T$ be
+a randomly shifted $\Delta$-fast tree for 
+$S$.  Let $q \in U$ be fixed.
+We can insert or delete $q$ into $T$
+in $O(\log \log \Delta)$ expected time, where the expectation is 
+over the random choice of the shift $r$.
+\end{lemma}
+
+\begin{proof}
+To insert $q$ into $T$, we need to split an edge $(u,v)$ of $T$ into
+two edges $(u,b)$ and $(b,v)$. This creates
+exactly two new nodes in $T$, an inner node and a leaf node. 
+The branch node is exactly $\lca_T(q)$, and it has expected height 
+$h_k = O(\log \Delta)$, by Lemma~\ref{lemma:delta_lca_loglog_delta}. 
+Thus, it will
+take $O(\log\log \Delta)$ expected time to find
+the edge $(u,v)$, by
+Corollary~\ref{cor:delta_fast_expected_lca}.
+
+Once the edge $(u,v)$ is found, the hash maps $H_z$ and $H_u$ 
+can then be updated in constant time.
+Now let us consider the update time of the 
+hash map $H_\Delta$. Recall that
+$H_\Delta$ stores the lowest branch nodes for all prefixes
+of the elements in $S$ that have certain lengths.
+This means that all prefixes on the edge $(b,v)$ which 
+are stored in the hash map $T_\Delta$ need to
+be updated. Furthermore, prefixes at certain depths which 
+are on the new edge $(b,q)$ need to
+be added. For the edge $(b,v)$, we will enumerate 
+all prefixes at certain depths, but we will select only those that 
+lie on the edge $(b,v)$. This needs
+$O(\log\log\log\Delta)$ insertions and updates in total: we
+have to insert the prefixes $q_0 \dots q_{d_i}$ for all 
+$i \geq 1$ with $d_i < |b|$. Since we defined 
+$d_i = w - h_i = w - 2^{2^i}$, 
+and since $|b| = w - O(\log \Delta)$, 
+we have that $d_i \leq |b|$ as soon as 
+$c \log\Delta < 2^{2^i}$. This holds for 
+$i > \log\log (c\log \Delta)$, and hence $i =
+\Theta(\log\log\log\Delta)$.
+
+After that, the leftmost and rightmost elements for the subtrees
+of $T$ have to be updated. For this, we need to add one
+subpath for the new leaf $q$, and we may need to split
+a subpath at a node of height $h_k = O(\log \Delta)$ and join
+the resulting upper path with the newly created subpath. As we
+have seen, this takes $O(\log h_k) = O(\log \log \Delta)$ time.
+
+The operations for deleting an element $q$ from $S$ are symmetric.
+\end{proof}
+
+The following theorem summarizes our result.
+
+\begin{theorem}
+Let $r \in U$ be picked uniformly at random.
+After performing a shift of $U$ by $r$, 
+the $\Delta$-fast trie provides a data structure for the
+dynamic predecessor problem such that the 
+query operations take $O(\log \log \Delta)$ worst-case time and 
+the update operations need $O(\log \log \Delta)$ expected
+time, for $\Delta = \min \{|q-q^+|, |q-q^-|\}$, where $q$ is the
+requested element and $q^+$ and $q^-$ are the predecessor and
+successor of $q$ in the current set $S$. At any point in time, 
+the data structure needs $O(n)$ words of space, where $n = |S|$.
+\end{theorem}
+
+\section{Applications}
+
+Bose~\etal~\cite{BoseDoDuHoMo13} describe how to combine their structure
+with a technique of Chan~\cite{Chan02} and random 
+shifting~\cite[Chapter~11]{HarPeled11} for obtaining a data structure for 
+distance-sensitive
+approximate nearest neighbor queries on a grid.
+More precisely, let $d \in \N$ be the fixed dimension, 
+$U = \{0, \dots, 2^{w}-1\}$ be the universe, and
+let $\eps > 0$ be given.
+The goal is to maintain a dynamic set $S \subseteq U^d$ under
+insertions, deletions, and \emph{$\eps$-approximate
+nearest neighbor queries}: given a query point $q \in U^d$,
+find a $p \in S$ with $d_2(p,q) \leq (1+\eps)d_2(p, S)$.
+Plugging our $\Delta$-fast tries into the structure of
+Bose~\etal~\cite[Theorem~9]{BoseDoDuHoMo13}, we can
+immediately improve the space requirement of their structure to linear:
+\begin{theorem}
+Let $U = \{0, \dots, 2^w-1\}$ and let $d$ be a constant.
+Furthermore, let $\eps > 0$ be given.
+There exists a data structure that supports $(1+\eps)$-approximate
+nearest neighbor queries over a subset $S \subseteq U^d$ in 
+$(1/\eps^d)\log\log \Delta)$ expected time and insertions and deletions
+of elements of $U^d$ in $O(\log\log \Delta)$ expected time.
+Here, $\Delta$ denotes the Euclidean distance between the query element
+and $S$. At any point in time, the data structure requires $O(n)$
+words of space, where $n  = |S|$.
+\end{theorem}
+
+As a second application, Bose~\etal~\cite{BoseDoDuHoMo13}
+present a data structure for dominance queries on a grid,
+based on a technique of Overmars~\cite{Overmars88}.
+Again, let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$,
+$|S| = n$ be given. The goal is to construct a data structure
+for \emph{dominance queries} in $S$. That is, given a query point
+$q \in U^2$, find all points $p$ in $S$ that \emph{dominate} $q$,
+i.e., for which we have $p_x \geq q_x$ and $p_y \geq q_y$, there
+$p_x$, $p_y$ and $q_x$, $q_y$ are the $x$- and $y$-coordinates 
+of $p$ and $q$.
+
+Again, using $\Delta$-fast tries, we can immediately improve the
+space requirement for the result of 
+Bose~\etal~\cite[Theorem~10, Corollary~13]{BoseDoDuHoMo13}.
+
+\begin{theorem}
+Let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$, $|S|=n$
+be given. There exists a data structure that reports the points in $S$
+that dominate a given query point $q = (a,b) \in U^2$ in expected time
+$O(\log\log(h+v) + k)$, where $h = 2^w - a$, $v = 2^2-b$, and $k$
+is the number of points in $S$ dominated by $q$.
+The data structure uses $O(n \log n)$ space.
+\end{theorem}
+\section{Conclusion}
+
+We present a new data structure for local searches
+in bounded universes. This structure now interpolates
+seamlessly between hashtables and van-Emde-Boas trees,
+while requiring only a linear number of words. This provides
+an improved, and in our opinion also slightly simpler, version
+of a data structure by Bose \etal~\cite{BoseDoDuHoMo13}.
+All the operations of our structure can be
+presented explicitly in pseudocode. This can be found in the
+Master's thesis of the first author~\cite{Ehrhardt15}.
+
+\bigskip
+\noindent\textbf{Acknowledgments.}
+We thank the anonymous reviewers for numerous
+insightful comments that improved the quality of the paper.
+\wolfgang{TODO}
+
+\hyphenation{ Vi-gna Sa-ba-di-ni Kath-ryn Ker-n-i-ghan Krom-mes Lar-ra-bee
+  Pat-rick Port-able Post-Script Pren-tice Rich-ard Richt-er Ro-bert Sha-mos
+  Spring-er The-o-dore Uz-ga-lis }
+
+
+\bibliographystyle{abbrv}
+\bibliography{journal}
+
+\end{document}

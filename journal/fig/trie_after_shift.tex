@@ -1,0 +1,224 @@
+%!TEX root = trie_shift_example.tex
+
+\begin{tikzpicture}[
+ scale=1.5,
+    % transform shape,
+    every node/.style = {
+      %draw,
+      color=black
+    },
+    every edge/.style = {
+      none,
+      color=black,
+      thick, solid
+    },
+    grow = down,  % alignment of characters
+    sloped,
+    level 0/.style = {sibling distance=0},
+    level 1/.style = {sibling distance=4cm},
+    level 2/.style = {sibling distance=4cm},
+    level 3/.style = {sibling distance=2cm},
+    level 4/.style = {sibling distance=1cm},
+    level 5/.style = {sibling distance=0.5cm},
+    level 6/.style = {sibling distance=0.25cm},
+    level distance = 0.5cm,
+    minimum size=1pt
+  ]
+
+  \tikzset{
+    normalnode/.style = {
+      circle,
+      thick,
+      scale = 2,
+      minimum size=1pt,
+      inner sep=0pt,
+      outer sep=0pt,
+      % mark size=1pt,
+      color=black,
+      fill = black!90!black,
+      % fill = orange!90!blue,
+      % label = center:\textsf{\Large H}
+    },
+    phat-edge/.style = {
+      thick, solid,
+      color=black
+    },
+    thin-edge/.style = {
+      thin, dotted,
+      color=black
+    },
+    cut-edge/.style = {
+      color=red
+    },
+    join-edge/.style = {
+      color=blue
+    },
+    levels/.style = {
+      level distance = #1 * 0.5cm
+    },
+    active-edge/.style = {
+      thick,
+      color=red
+    },
+    query-arrow/.style={
+      decorate,
+      decoration={
+        snake,
+        amplitude=.05mm,
+        segment length=0.5mm,
+        post length=0.8mm
+      }
+    },
+  }
+
+  \node[normalnode] (Root) {}
+  child[levels=1, level 1] {
+    node [normalnode] (Node01) {}
+    child[levels=3, level 3] {
+        node [normalnode, label=270:\scriptsize$11$] (Node01011) {}
+        child[levels=0, level 6] {
+            node [draw=none] {}
+            edge from parent [draw=none]
+        }
+        child[levels=0, level 6] {
+            node [draw=none] {}
+            edge from parent [draw=none]
+        }
+        edge from parent
+        node[above] {\tiny 110}
+    }
+    child[levels=1, level 3] {
+        node [normalnode] (Node011) {}
+        child[levels=1, level 4] {
+            node [normalnode] (Node0110) {}
+            child[levels=1, level 5] {
+                node [normalnode, label=270:\scriptsize$12$] (Node01100) {}
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                edge from parent
+                node[above] {\tiny 0}
+            }
+            child[levels=1, level 5] {
+                node [normalnode, label=270:\scriptsize$13$] (Node01101) {}
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                edge from parent
+                node[above] {\tiny 1}
+            }
+            edge from parent
+            node[above] {\tiny 0}
+        }
+        child[levels=1, level 4] {
+            node [normalnode] (Node0111) {}
+            child[levels=1, level 5] {
+                node [normalnode, label=270:\scriptsize$14$] (Node01110) {}
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                edge from parent
+                node[above] {\tiny 0}
+            }
+            child[levels=1, level 5] {
+                node [normalnode, label=270:\scriptsize$15$] (Node01111) {}
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                child[levels=0, level 6] {
+                    node [draw=none] {}
+                    edge from parent [draw=none]
+                }
+                edge from parent
+                node[above] {\tiny 1}
+            }
+            edge from parent
+            node[above] {\tiny 1}
+        }
+        edge from parent
+        node[above] {\tiny 1}
+    }
+    edge from parent
+    node[above] {\tiny 10}
+  }
+  child[levels=1, level 1] {
+    node [normalnode] (Node10) {}
+    child[levels=3, level 3] {
+        node [normalnode, label=270:\scriptsize$19$] (Node10011) {}
+        child[levels=0, level 6] {
+            node [draw=none] {}
+            edge from parent [draw=none]
+        }
+        child[levels=0, level 6] {
+            node [draw=none] {}
+            edge from parent [draw=none]
+        }
+        edge from parent
+        node[above] {\tiny 1\qquad1\qquad0}
+    }
+    child[levels=1, level 3] {
+        node [normalnode] (Node101) {}
+        child[levels=2, level 4] {
+            node [normalnode, label=270:\scriptsize$21$] (Node10101) {}
+            child[levels=0, level 6] {
+                node [draw=none] {}
+                edge from parent [draw=none]
+            }
+            child[levels=0, level 6] {
+                node [draw=none] {}
+                edge from parent [draw=none]
+            }
+            edge from parent
+            node[above] {\tiny 10}
+        }
+        child[levels=2, level 4] {
+            node [normalnode, label=270:\scriptsize$22$] (Node10110) {}
+            child[levels=0, level 6] {
+                node [draw=none] {}
+                edge from parent [draw=none]
+            }
+            child[levels=0, level 6] {
+                node [draw=none] {}
+                edge from parent [draw=none]
+            }
+            edge from parent
+            node[above] {\tiny 10}
+        }
+        edge from parent
+        node[above] {\tiny 1}
+    }
+    edge from parent
+    node[above] {\tiny 10}
+  };
+
+  \path[draw,active-edge]
+    (Root) -- (Node10)
+    (Node10) -- ($(Node10)!0.6!(Node10011)$)
+    node[normalnode] (Q1Start) {}
+    (Node10) -- (Node10011);
+
+  \node[normalnode, label={270:\scriptsize $q$}] (Q1End) at ($(Node01111)!0.5!(Node10011)$) {};
+
+  query-arrow, red,
+  \draw [->, red, query-arrow,thick] (Q1Start) to [out=180,in=90]
+        node [pos=.5, above, sloped] {\tiny $0$} (Q1End);
+
+  \node[draw, rectangle, label={0:\scriptsize $\lcp(q)$}] at (Q1Start) {};
+
+\end{tikzpicture}
