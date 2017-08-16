@@ -1,0 +1,117 @@
+%!TEX root = minimal_leaves_example.tex
+
+\begin{tikzpicture}[
+    scale=1.5,
+    minimum size=1pt
+  ]
+
+  \tikzset{
+    normalnode/.style = {
+      circle,
+      thick,
+      scale = 2,
+      minimum size=1pt,
+      inner sep=0pt,
+      outer sep=0pt,
+      % mark size=1pt,
+      % color=red,
+      fill = black!90!black,
+      % fill = orange!90!blue,
+      % label = center:\textsf{\Large H}
+    }
+  }
+
+\newcommand*{\stopgap}[1]{
+\fill [fill=white] #1 ++ (0,-1.75mm) -- +(-1mm,0) -- ++(0,1.75mm) -- ++(1mm,1.75mm) --
+  ++(2pt,-0pt) -- +(0,0mm) -- ++(-1mm,-1.75mm) -- +(-1mm,-1.75mm) -- cycle;
+\draw [] #1 +(-1mm,-1.75mm) -- +(1mm,1.75mm)
+  ++(2pt,-0pt) +(1mm,1.75mm) -- +(-1mm,-1.75mm);
+}
+
+\tikzset{
+  trie/.style={
+      draw,
+      color = black,
+      shape=isosceles triangle,
+      minimum height=3.5cm,
+      minimum width=5cm,
+      isosceles triangle stretches,
+      shape border rotate=90,
+      inner sep=0,
+      fill = lightgray!50!white,
+      fill opacity=0.8,
+  },
+  heighttext/.style={
+    decoration={
+      text along path,
+      text={\scriptsize 1243431},
+      text align={center}
+    },
+    decorate
+  }
+}
+
+    \path[draw] (0,0) -- (6,1)
+      node [normalnode, pos=0.0, label={\scriptsize $ $}] (RootM1) {}
+      node [normalnode, pos=0.2, label={\scriptsize $ $}] (Root1) {}
+      node [pos=0.35] (Gap1) {}
+      node [normalnode, pos=0.5, label={\scriptsize $ $}] (RootI) {}
+      node [pos=0.625] (Gap2) {}
+      node [normalnode, pos=0.75,label={\scriptsize $ $}] (Root3) {}
+      node [normalnode, pos=1,   label={\scriptsize $ $}] (Root4) {};
+
+    \node[] (slope) at ($(0,20pt)!(0,0)!(6,1cm+20pt)$) {};
+
+    \foreach \pos/\slope/\textpos/\height/\color in {0.2/1/0.5/1/black, 0.5/1.5/0.7/i/red, 0.75/2/0.8375/\log w-1/black, 1/2.5/0.875/\log w/black} {
+
+      \path[color=\color,draw] ($\slope*(slope)-0.75*(slope)$) +(0,0) -- +($(0,0)!\pos!(6,1)$)
+        node [pos=\textpos,sloped,above,black] {\scriptsize $\bigO(\height)$}
+        node [sloped,pos=0.0] (DotsStart) {\tiny\textbar}
+        node [sloped,pos=1.0] (DotsEnd) {\tiny\textbar};
+
+      \begin{scope}[on background layer]
+      \path[draw,dotted,color=\color] ($(0,0)!\pos!(6,1)$) -- ($(DotsEnd)$);
+      \end{scope}
+    }
+    \path[draw,dotted] (0,0) -- ($(DotsStart)$);
+
+    \node [trie, anchor=north, minimum height=0.85cm, minimum width = 1cm]   (TrieM1)at (RootM1) {};
+    \node [trie, anchor=north, minimum height=1.15cm, minimum width = 1.5cm] (Trie1) at (Root1) {};
+    \node [trie, anchor=north, minimum height=1.6cm,  minimum width = 1.5cm] (TrieI) at (RootI) {};
+    \node [trie, anchor=north, minimum height=1.975cm,minimum width = 1.5cm] (Trie3) at (Root3) {};
+    \node [trie, anchor=north, minimum height=2.35cm, minimum width = 1.5cm] (Trie4) at (Root4) {};
+
+    \coordinate (A) at ($(TrieI.north)-(0,0.5pt)$);
+    \coordinate (B) at ($(TrieI.north) !.25! (TrieI.south) - (0.125/8, 0)$) ;
+    \coordinate (C) at ($(TrieI.north) !.75! (TrieI.south east) + (0.125/8, 0)$) ;
+    \coordinate (D) at ($(TrieI.left corner) !.75! (TrieI.right corner)$) ;
+    \draw [red] plot [draw,smooth] coordinates {(A) (B) (C) (D)};
+    \node[normalnode] at (RootI) {};
+    \node[normalnode] at ($(TrieI.left corner) !.75! (TrieI.right corner)$) {};
+
+    \node [anchor=south] at (TrieM1.south){\scriptsize $T_{-1}$};
+    \node [anchor=south] at (Trie1.south) {\scriptsize $T_{1}$};
+    \node [anchor=south] at (TrieI.south) {\scriptsize $T_{i}$};
+    \node [anchor=south] at (Trie3.south) {\scriptsize $T_{\log w -1}$};
+    \node [anchor=south] at (Trie4.south) {\scriptsize $T_{\log w}$};
+
+    \foreach \trie/\height in {TrieM1/1,Trie1/1,TrieI/i,Trie3/\log w-1,Trie4/\log w}{
+
+      \coordinate (ArrowAbove\trie) at
+        ($(\trie.right corner)!(\trie.apex)!(\trie.right corner)$);
+
+      \draw [dotted]
+        (1pt,0) +(\trie.apex) -- +(ArrowAbove\trie);
+
+      \draw
+        (1pt,0) +(\trie.right corner) -- +(ArrowAbove\trie)
+        node [sloped,pos=0.0,scale=0.5] {\scriptsize\textbar}
+        node [sloped,pos=1.0,scale=0.5] {\scriptsize\textbar}
+        node[midway,sloped,above,rotate=180] {\scriptsize $\bigO(\height)$};
+    }
+    \begin{scope}[scale=0.5]
+      \stopgap{(Gap1)};
+      \stopgap{(Gap2)};
+    \end{scope}
+
+\end{tikzpicture}

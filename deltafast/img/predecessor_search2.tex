@@ -1,0 +1,150 @@
+%!TEX root = predecessor_search_example.tex
+
+\begin{tikzpicture}[
+    scale=1.5,
+    % transform shape,
+    every node/.style = {
+      % draw
+      % circle
+    },
+    grow = down,  % alignment of characters
+    level 1/.style = {sibling distance=1cm},
+    level 2/.style = {sibling distance=0.5cm,level distance=0.25cm},
+    level 3/.style = {sibling distance=1cm},
+    level distance = 0.5cm,
+    minimum size=1pt
+  ]
+
+  \tikzset{
+    cross/.style={
+      cross out,
+      draw,
+      minimum size=2*(#1-\pgflinewidth),
+      inner sep=0pt,
+      outer sep=0pt
+    },
+    normalnode/.style = {
+      circle,
+      thick,
+      scale = 2,
+      minimum size=1pt,
+      inner sep=0pt,
+      outer sep=0pt,
+      % mark size=1pt,
+      % color=red,
+      fill = black!90!black,
+      % fill = orange!90!blue,
+      % label = center:\textsf{\Large H}
+    },
+    active-node/.style = {
+      normalnode,
+      fill = red
+    },
+    empty-child/.style={
+      sibling distance=0,
+      level distance=0
+    },
+    active-edge/.style = {
+      color = red,
+      line width=1pt
+    },
+    inactive-edge/.style = {
+      color = black,
+      line width=0.5pt
+    },
+    empty-subtree/.style={
+      scale=0.8,
+      fill=gray,
+      label={[label distance=-0.25cm]270:$\bot$}
+    },
+    subtree/.style={
+      draw,
+      color = black,
+      fill = lightgray,
+      fill opacity=0.8,
+      % dashed,
+      shape border uses incircle,
+      isosceles triangle,
+      shape border rotate=90,
+      yshift=-0.5cm
+    },
+    query-arrow/.style={
+      decorate,
+      decoration={
+        snake,
+        amplitude=.05mm,
+        segment length=0.5mm,
+        post length=0.8mm
+      }
+    },
+    query-node/.style={
+      normalnode,
+      scale = 1.5,
+      darkgray
+    },
+    hline/.style={
+      gray,
+      thin,
+      densely dashed
+      %dashdotdotted
+    }
+  }
+
+  \tikzset{
+    itria/.style={
+      draw,
+      % dashed,
+      shape border uses incircle,
+      isosceles triangle,
+      isosceles triangle apex angle=110,
+      shape border rotate=90,
+      % yshift=-1.45cm
+      % yshift=-1.3cm
+    },
+    rtria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=90,
+      shape border rotate=-45,yshift=0.2cm,xshift=0.5cm},
+    ritria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=110,
+      shape border rotate=-55,yshift=0.1cm},
+    letria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=110,
+      shape border rotate=235,yshift=0.1cm}
+  }
+
+  \node[normalnode, clockwise from=0, sibling angle=180, label={0:\scriptsize $u$}] (NodeU) {}
+    child{
+      node [normalnode, rectangle, label={0:\scriptsize $p_i+1$}] (NodePI) {}
+      % [counterclockwise from=-120, sibling angle=60]
+      child {
+        node [normalnode, label={0:\scriptsize $v$}] (NodeV) {}
+        node [subtree] (TrieV) {}
+        edge from parent [inactive-edge] node [left] {}
+      }
+      child[empty-child] {
+      }
+      edge from parent [inactive-edge] node [left] {}
+    }
+    child[empty-child] {};
+%,minimum size=1pt,inner sep=10pt,outer sep=0pt
+
+  \begin{scope}[on background layer]
+    \node [
+      draw,
+      color=black,
+      anchor=north,
+      shape=isosceles triangle,
+      minimum height=1.025cm,
+      minimum width=3cm,
+      isosceles triangle stretches,
+      shape border rotate=90,
+      fill = lightgray!50!white
+    ] (TriePI) at (NodePI) {};
+  \end{scope}
+
+  \node [anchor=south] at (TriePI.south east){\scriptsize $I_{p_i+1}$};
+  \node [anchor=south] at (TrieV.south){\scriptsize $I_{v}$};
+\end{tikzpicture}

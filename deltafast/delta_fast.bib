@@ -1,0 +1,310 @@
+%% --------------------------------------------------------------
+%% general
+%% --------------------------------------------------------------
+@preamble{"\newcommand{\SortNoop}[1]{}"}
+
+@string{and = " and " }       %% concatenation of authors
+@string{proc = "Proc. " }     %% Proceedings
+
+@string{jan = "January" }     %% publication months
+@string{feb = "February" }
+@string{mar = "March" }
+@string{apr = "April" }
+@string{may = "May" }
+@string{jun = "June" }
+@string{jul = "July" }
+@string{aug = "August" }
+@string{sep = "September" }
+@string{oct = "October" }
+@string{nov = "November" }
+@string{dec = "December" }
+
+@string{first = "1st" }       %% book editions
+@string{second = "2nd" }
+@string{third = "3rd" }
+@string{fourth = "4th" }
+@string{fifth = "5th" }
+@string{sixth = "6th" }
+@string{seventh = "7th" }
+@string{eighth = "8th" }
+@string{ninth = "9th" }
+@string{tenth = "10th" }
+
+
+%% --------------------------------------------------------------
+%% authors
+%% --------------------------------------------------------------
+
+@string{NameF = "Firstname Name"}
+
+
+%% --------------------------------------------------------------
+%% publishers
+%% --------------------------------------------------------------
+
+
+@string{acm-press = "ACM" }
+@string{acad = " Academic Press" }
+@string{ad-wes = "Addison-Wesley" }
+@string{ak-ver = "Akademie-Verlag" }
+@string{ams = "American Mathematical Society" }
+@string{teubner = "B. G. Teubner" }
+@string{birkh = "Birkh{\"a}user-Verlag" }
+@string{crc = "CRC Press" }
+@string{camb-u-p = "Cambridge University Press" }
+@string{cs = "Computer Science Press" }
+@string{dover = "Dover Publications" }
+@string{elsevier = "Elsevier" }
+@string{ieee-cs = "IEEE Computer Society" }
+@string{ieee = "IEEE" }
+@string{jai = "JAI Press" }
+@string{wiley = "John Wiley \& Sons" }
+@string{kluwer = "Kluwer" }
+@string{mit = "MIT Press" }
+@string{math-as-am = "Mathematical Association of America" }
+@string{mcgraw-hill = "McGraw-Hill" }
+@string{morgan-k = "Morgan-Kaufmann" }
+@string{north-h = "North-Holland" }
+@string{oxford = "Oxford University Press" }
+@string{pergamon = "Pergamon Press" }
+@string{prentice = "Prentice Hall" }
+@string{princeton = "Princeton University Press" }
+@string{siam = "SIAM" }
+@string{simon = "Simon \& Schuster" }
+@string{springer = "Springer Verlag" }
+@string{vieweg = "Verlag Vieweg" }
+@string{freeman = "W. H. Freeman" }
+@string{wiley-inter = "Wiley-Interscience" }
+@string{world = "World Scientific Publishing" }
+
+%% --------------------------------------------------------------
+%% journals and conference proceedings
+%% --------------------------------------------------------------
+
+@string{algorithmica = "Algorithmica" }
+@string{cgta = "Comput. Geom. Theory Appl." } %(CGTA)
+@string{siggraph = "Comput. Graph." } % (SIGGRAPH)
+@string{dcg = "Discrete Comput. Geom." } % (DCG)
+%% @string{icalp = " ICALP"} %(ICALP)
+@string{icalp = " Internat. Colloq. Automata Lang. Program. (ICALP)"} %(ICALP)
+@string{ipl = "Inform. Process. Lett." } % (IPL)
+@string{ijcga = "Internat. J. Comput. Geom. Appl." } % (IJCGA)
+@string{jacm = "J. ACM" }
+@string{jalg = "J. Algorithms" }
+@string{jocg = "J. of  Computational Geometry" }
+@string{infcomp = "Inform. and Comput." }
+@string{jcss = "J. Comput. System Sci." }
+%% @string{soda = " SODA" } %(SODA)
+@string{soda = " Annu. ACM-SIAM Sympos. Discrete Algorithms (SODA)" } %(SODA)
+@string{scg = " Annu. Sympos. Comput. Geom. (SoCG)" } % (SCG)
+@string{scg2 = " Int. Sympos. Comput. Geom. (SoCG)" } % (SCG)
+%%@string{stoc = " STOC" } % (STOC)
+@string{stoc = " Annu. ACM Sympos. Theory Comput. (STOC)" } % (STOC)
+%% @string{esa = " ESA" } % (ESA)
+@string{esa = " Annu. European Sympos. Algorithms (ESA)" } % (ESA)
+%%@string{focs = " FOCS" } % (FOCS)
+@string{focs = " Annu. IEEE Sympos. Found. Comput. Sci. (FOCS)" } % (FOCS)
+@string{isaac = " Annu. Internat. Sympos. Algorithms Comput. (ISAAC)" } % (ISAAC)
+@string{cccg = " Canad. Conf. Comput. Geom. (CCCG)" } % (CCCG)
+@string{ewcg = " European Workshop Comput. Geom. (EWCG)" } % (EWCG)
+@string{tcs = "Theoret. Comput. Sci." } % (TCS)
+@string{sicomp = "SIAM J. Comput."}
+@string{stacs = " Sympos. Theoret. Aspects Comput. Sci. (STACS)"} % (STACS)
+@string{lncs = "Lecture Notes in Computer Science"} % (LNCS)
+@string{alenex = "Workshop on Algorithm Engineering and Experiments (ALENEX)"} %ALENEX
+@string{sjcc = "AFIPS Spring Joint Computer Conferences" }
+@string{talg = "ACM Transactions on Algorithms" }
+@string{cacm = "Commun. ACM" }
+@string{nordic = "Nordic J. Comput." }
+@string{latin = " Latin American Symp. Theoretical Inf. (LATIN)"}
+@string{fun = "Internat. Conf. Fun w. Algorithms (FUN)"}
+
+@article{vEmdeBoasKaZi76,
+    AUTHOR = {{\SortNoop{Emde Boas}}van Emde Boas, P. and Kaas, R. and
+    Zijlstra, E.},
+     TITLE = {Design and implementation of an efficient priority queue},
+   JOURNAL = {Math. Systems Theory},
+    VOLUME = {10},
+      YEAR = {1976},
+    NUMBER = {2},
+     PAGES = {99--127},
+      ISSN = {0025-5661},
+}
+
+@article{vEmdeBoas77,
+  author    = {{\SortNoop{Emde Boas}}van Emde Boas, Peter},
+  title     = {Preserving Order in a Forest in Less Than Logarithmic Time
+               and Linear Space},
+  journal   = ipl,
+  volume    = {6},
+  number    = {3},
+  year      = {1977},
+  pages     = {80--82},
+}
+
+@article{BoseDoDuHoMo13,
+  author    = {Prosenjit Bose and
+               Karim Dou{\"{\i}}eb and
+               Vida Dujmovic and
+               John Howat and
+               Pat Morin},
+  title     = {Fast local searches and updates in bounded universes},
+  journal   = cgta,
+  volume    = {46},
+  number    = {2},
+  pages     = {181--189},
+  year      = {2013},
+}
+
+@article{Pugh90,
+  author    = {William Pugh},
+  title     = {Skip Lists: A Probabilistic Alternative to Balanced Trees},
+  journal   = cacm,
+  volume    = {33},
+  number    = {6},
+  pages     = {668--676},
+  year      = {1990},
+}
+
+@article{Johnson82,
+  author    = {Donald B. Johnson},
+  title     = {A Priority Queue in Which Initialization and 
+  Queue Operations Take
+               ${O}(\log \log {D})$ Time},
+  journal   = {Math. Systems Theory},
+  volume    = {15},
+  number    = {4},
+  pages     = {295--309},
+  year      = {1982},
+}
+
+@techreport{vEmdeBoas13,
+  author    = {{\SortNoop{Emde Boas}}van Emde Boas, Peter},
+  title     = {Thirty nine years of stratified trees},
+  number    = {PP-2013-16},
+  institution = "Universiteit van Amsterdam. Institute for Logic, 
+                 Language and Computation",
+  year      = {2013},
+}
+
+@mastersthesis{Ehrhardt15,
+  author = {Marcel Ehrhardt},
+  title  = {An In-Depth Analysis of Data Structures Derived 
+            from van-{E}mde-{B}oas-Trees},
+  school = {Freie Universit\"at Berlin},
+  year   = {2015},
+  note   = {\texttt{http:// www.mi.fu-berlin.de/inf/groups/ag-ti/theses/download/Ehrhardt15.pdf}}
+}
+
+@inproceedings{BelazzouguiBoVi10,
+  author    = {Djamal Belazzougui and
+               Paolo Boldi and
+               Sebastiano Vigna},
+  title     = {Dynamic $Z$-Fast Tries},
+  booktitle = proc # "17th" # " Int. Symp. String Processing and 
+              Information Retrieval (SPIRE)",
+  pages     = {159--172},
+  year      = {2010},
+}
+
+@book{CormenLeRiSt09,
+    AUTHOR = {Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald
+              L. and Stein, Clifford},
+     TITLE = {Introduction to algorithms},
+   EDITION = {Third},
+ PUBLISHER = mit,
+      YEAR = {2009},
+}
+
+@inproceedings{DemaineMePaPa06,
+  author    = {Erik D. Demaine and
+               Friedhelm {Meyer auf der Heide} and
+               Rasmus Pagh and
+               Mihai P\v{a}tra\c{s}cu},
+  title     = {De Dictionariis Dynamicis Pauco Spatio Utentibus},
+  booktitle = proc # "7th" # latin,
+  pages     = {349--361},
+  year      = {2006},
+}
+
+@article{Ruzic09,
+  author    = {Milan Ru\v{z}i\'{c}},
+  title     = {Making deterministic signatures quickly},
+  journal   = talg,
+  volume    = {5},
+  number    = {3},
+  pages     = {26:1--26:26},
+  year      = {2009},
+}
+
+@unpublished{Patrascu10,
+  title = {{vEB} Space: Method 4},
+  author = {P\v{a}tra\c{s}cu, Mihai},
+  note = {\texttt{http://infoweekly.blogspot.de/ 2010/09/veb-space-method-4.html}},
+  year = {2010},
+}
+
+@book{PreparateSh85,
+    AUTHOR = {Preparata, Franco P. and Shamos, Michael Ian},
+     TITLE = {Computational geometry. An introduction},
+ PUBLISHER = springer,
+      YEAR = {1985},
+}
+
+@book{Knuth98,
+   AUTHOR = {Knuth, Donald E.},
+   TITLE = {The art of computer programming. {V}ol. 3. Sorting and searching},
+   Edition = "Second",
+   PUBLISHER = ad-wes,
+   YEAR = {1998},
+}
+
+
+@article{DemaineHaIaPa07,
+  author    = {Erik D. Demaine and
+               Dion Harmon and
+               John Iacono and
+               Mihai P\v{a}tra\c{s}cu},
+  title     = {Dynamic Optimality -- Almost},
+  journal   = sicomp,
+  volume    = {37},
+  number    = {1},
+  pages     = {240--251},
+  year      = {2007},
+}
+
+@inproceedings{Chan02,
+  author    = {Timothy M. Chan},
+  title     = {Closest-point problems simplified on the {RAM}},
+  booktitle = proc # "13th" # soda,
+  pages     = {472--473},
+  year      = {2002},
+}
+
+@book{HarPeled11,
+    AUTHOR = {Har-Peled, Sariel},
+     TITLE = {Geometric approximation algorithms},
+    SERIES = {Mathematical Surveys and Monographs},
+    VOLUME = {173},
+ PUBLISHER = ams,
+      YEAR = {2011},
+}
+
+@article{Overmars88,
+  author    = {Mark H. Overmars},
+  title     = {Efficient Data Structures for Range Searching on a Grid},
+  journal   = jalg,
+  volume    = {9},
+  number    = {2},
+  pages     = {254--275},
+  year      = {1988},
+}
+
+@unpublished{BelazzougiBoVi12,
+  author    = {Djamal Belazzougui and
+               Paolo Boldi and
+               Sebastiano Vigna},
+  title     = {Predecessor search with distance-sensitive query time},
+  note    = {\texttt{arXiv:1209.5441}},
+  year      = {2012},
+}

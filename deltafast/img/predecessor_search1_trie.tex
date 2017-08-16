@@ -1,0 +1,262 @@
+%!TEX root = predecessor_search1_example.tex
+
+\begin{tikzpicture}[
+    scale=1.5,
+    % transform shape,
+    every node/.style = {
+      % draw
+      % circle
+    },
+    grow = down,  % alignment of characters
+    level 1/.style = {sibling distance=1cm},
+    level 2/.style = {sibling distance=1cm},
+    level 3/.style = {sibling distance=1cm},
+    level distance = 0.75cm,
+    minimum size=1pt
+  ]
+
+  \tikzset{
+    cross/.style={
+      cross out,
+      draw,
+      minimum size=2*(#1-\pgflinewidth),
+      inner sep=0pt,
+      outer sep=0pt
+    },
+    normalnode/.style = {
+      circle,
+      thick,
+      scale = 2,
+      minimum size=1pt,
+      inner sep=0pt,
+      outer sep=0pt,
+      % mark size=1pt,
+      % color=red,
+      fill = black!90!black,
+      % fill = orange!90!blue,
+      % label = center:\textsf{\Large H}
+    },
+    active-node/.style = {
+      normalnode,
+      fill = red
+    },
+    empty-child/.style={
+      sibling distance=0,
+      level distance=0
+    },
+    active-edge/.style = {
+      color = red,
+      line width=1pt
+    },
+    inactive-edge/.style = {
+      color = black,
+      line width=0.5pt
+    },
+    empty-subtree/.style={
+      scale=0.8,
+      fill=gray,
+      label={[label distance=-0.25cm]270:$\bot$}
+    },
+    subtree/.style={
+      draw,
+      color = black,
+      fill = lightgray,
+      fill opacity=0.8,
+      % dashed,
+      shape border uses incircle,
+      isosceles triangle,
+      shape border rotate=90,
+      yshift=-0.5cm
+    },
+    query-arrow/.style={
+      decorate,
+      decoration={
+        snake,
+        amplitude=.05mm,
+        segment length=0.5mm,
+        post length=0.8mm
+      }
+    },
+    query-node/.style={
+      normalnode,
+      scale = 1.5,
+      darkgray
+    },
+    hline/.style={
+      gray,
+      thin,
+      densely dashed
+      %dashdotdotted
+    }
+  }
+
+  \tikzset{
+    itria/.style={
+      draw,
+      % dashed,
+      shape border uses incircle,
+      isosceles triangle,
+      isosceles triangle apex angle=110,
+      shape border rotate=90,
+      % yshift=-1.45cm
+      % yshift=-1.3cm
+    },
+    rtria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=90,
+      shape border rotate=-45,yshift=0.2cm,xshift=0.5cm},
+    ritria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=110,
+      shape border rotate=-55,yshift=0.1cm},
+    letria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=110,
+      shape border rotate=235,yshift=0.1cm},
+    show curve controls/.style={
+        decoration={
+            show path construction,
+            curveto code={
+                \draw [blue, dashed]
+                    (\tikzinputsegmentfirst) -- (\tikzinputsegmentsupporta)
+                    node [at end, cross out, draw, solid, red, inner sep=2pt]{};
+                \draw [green, dashed]
+                    (\tikzinputsegmentsupportb) -- (\tikzinputsegmentlast)
+                    node [at start, cross out, draw, solid, red, inner sep=2pt]{};
+            }
+        }, decorate
+    }
+  }
+
+% http://tex.stackexchange.com/questions/18617/tikz-draw-only-a-certain-central-length-of-a-given-path
+\pgfdeclaredecoration{ignore}{final}
+{
+\state{final}{}
+}
+
+% Declare the actual decoration.
+\pgfdeclaremetadecoration{prefix}{initial}{
+    \state{initial}[
+        width={1pt},
+        next state=middle
+    ]
+    {\decoration{moveto}}
+    \state{middle}[
+        width={\the\pgfdecorationsegmentlength-1pt},
+        next state=final
+    ]
+    {\decoration{curveto}}
+    \state{final}
+    {\decoration{ignore}}
+}
+
+
+\tikzset{
+  position/.style={
+    decoration={
+      markings,
+      mark=at position 0.6 with {\coordinate (NodePK);},
+      mark=at position 0.8 with {\coordinate (NodeLCP);}
+    },
+    postaction={decorate}
+  },
+  trie/.style={
+      draw,
+      color = black,
+      shape=isosceles triangle,
+      minimum height=3.5cm,
+      minimum width=5cm,
+      isosceles triangle stretches,
+      shape border rotate=90,
+      inner sep=0,
+      fill = lightgray!50!white,
+      fill opacity=0.8,
+  },
+  initial segment/.style={
+    decoration={prefix},
+    decorate,
+    segment length=#1
+  }
+}
+
+    \node [trie] (triangle) at (0,0) {};
+
+    \coordinate (A) at ($ (triangle.north) !.25! (triangle.south) + (0.125, 0)$) ;
+    \coordinate (B) at ($ (triangle.north) !.75! (triangle.south) - (0.125, 0)$) ;
+    \coordinate (C) at ($ (triangle.left corner) !.7! (triangle.right corner)$) ;
+
+    \coordinate (NodeQ) at ($ (triangle.left corner) !.35! (triangle.right corner)$) ;
+
+    \coordinate (trianglestop0) at ($(triangle.north)-(0,0.5pt)$);
+    \coordinate (trianglestop5) at ($(triangle.right corner)+(0,0.125pt)$);
+    \coordinate (trianglestop1) at ($(trianglestop0) !.125! (trianglestop5)$);
+    \coordinate (trianglestop2) at ($(trianglestop0) !.25! (trianglestop5)$);
+    \coordinate (trianglestop3) at ($(trianglestop0) !.5! (trianglestop5)$);
+    \coordinate (trianglestop4) at ($(trianglestop0) !.75! (trianglestop5)$);
+
+    \coordinate (triangleleftstop0) at (trianglestop0);
+    \coordinate (triangleleftstop5) at ($(triangle.left corner)-(0,1pt)$);
+    \coordinate (triangleleftstop1) at ($(trianglestop0) !.125! (triangleleftstop5)$);
+    \coordinate (triangleleftstop2) at ($(trianglestop0) !.25! (triangleleftstop5)$);
+    \coordinate (triangleleftstop3) at ($(trianglestop0) !.5! (triangleleftstop5)$);
+    \coordinate (triangleleftstop4) at ($(trianglestop0) !.75! (triangleleftstop5)$);
+
+    \path[fill=gray!50!white]
+          (triangle.north) -- (triangleleftstop3) -- (trianglestop3) -- cycle;
+
+    \draw [red, position] plot [draw,smooth] coordinates {(trianglestop0) (A) (B) (C)};
+    \draw [red,double,initial segment=1.825cm] plot [draw,smooth] coordinates {(trianglestop0) (A) (B) (C)};
+
+    \path[draw] (triangleleftstop1) -- (trianglestop1);
+    \path[draw] (triangleleftstop2) -- (trianglestop2);
+    \path[draw] (triangleleftstop3) -- (trianglestop3);
+    \path[draw] (triangleleftstop4) -- (trianglestop4);
+
+    \coordinate (A2) at ($ (NodeLCP) !.25! (NodeQ) - (1pt, 0)$) ;
+    \coordinate (B2) at ($ (NodeLCP) !.75! (NodeQ) + (1pt, 0)$) ;
+
+    \draw [red] plot [draw,smooth] coordinates {(NodeLCP) (A2) (B2) (NodeQ)};
+
+    \node[normalnode, label=0:\scriptsize $lcp(q)$] at (NodeLCP) {};
+    \node[normalnode, label=0:\scriptsize $p_k$] at (NodePK) {};
+    \node[normalnode, label=270:\scriptsize $q$] at (NodeQ) {};
+    \node[normalnode] at (C) {};
+    \node[normalnode] at (trianglestop0) {};
+
+
+    \path (triangleleftstop1) -- (trianglestop1)
+          node[normalnode,pos=0.725,label={[label distance=-0.5em]225:\scriptsize $a_1$}] {};
+
+    \path (triangleleftstop3) -- (trianglestop3)
+          node[normalnode,pos=0.48,label={[label distance=-0.5em]55:\scriptsize $a_{j}$}] {}
+          node[normalnode,pos=0.48,label={[label distance=-0.5em]315:\scriptsize $lcp'$}] {};
+
+    \path (triangleleftstop4) -- (trianglestop4)
+          node[normalnode,pos=0.45,label={[label distance=-0.5em]225:\scriptsize $a_{j+1}$}] {};
+
+    \node [trie, fill = none] (triangle) at (0,0) {};
+
+    \coordinate (startscale) at ($(triangle.right corner) + (0.25,0)$);
+    \coordinate (endscale) at ($(startscale) + (0, 15)$);
+
+    \coordinate (scalestop0) at ($(startscale)!(trianglestop0)!(endscale)$);
+    \coordinate (scalestop1) at ($(startscale)!(trianglestop1)!(endscale)$);
+    \coordinate (scalestop2) at ($(startscale)!(trianglestop2)!(endscale)$);
+    \coordinate (scalestop3) at ($(startscale)!(trianglestop3)!(endscale)$);
+    \coordinate (scalestop4) at ($(startscale)!(trianglestop4)!(endscale)$);
+    \coordinate (scalestop5) at ($(startscale)!(trianglestop5)!(endscale)$);
+
+    \path[draw,<->] (scalestop0) -- (scalestop1) node[midway, right] {\scriptsize$w/2$};
+    \path[draw,<->] (scalestop1) -- (scalestop2) node[midway, right,xshift=0.5em,yshift=0.3em] {\scriptsize$\vdots$};
+    \path[draw,<->] (scalestop2) -- (scalestop3) node[midway, right] {\scriptsize$w/2^{j}$};
+    \path[draw,<->] (scalestop3) -- (scalestop4) node[midway, right] {\scriptsize$w/2^{j+1}$};
+    \path[draw,<->] (scalestop4) -- (scalestop5) node[midway, right] {\scriptsize$w/2^{j+1}$};
+
+    \path[draw,dotted] (trianglestop0) -- (scalestop0);
+    \path[draw,dotted] (trianglestop1) -- (scalestop1);
+    \path[draw,dotted] (trianglestop2) -- (scalestop2);
+    \path[draw,dotted] (trianglestop3) -- (scalestop3);
+    \path[draw,dotted] (trianglestop4) -- (scalestop4);
+    \path[draw,dotted] (trianglestop5) -- (scalestop5);
+
+\end{tikzpicture}

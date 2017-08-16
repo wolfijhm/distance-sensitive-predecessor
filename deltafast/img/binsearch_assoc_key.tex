@@ -1,0 +1,231 @@
+%!TEX root = compact_trie_lca_lcp_example.tex
+
+\begin{tikzpicture}[
+    scale=1.5,
+    % transform shape,
+    every node/.style = {
+      % draw
+      % circle
+    },
+    grow = down,  % alignment of characters
+    level 1/.style = {sibling distance=1.5cm},
+    level 2/.style = {sibling distance=1cm},
+    level 3/.style = {sibling distance=0.6cm},
+    level 4/.style = {sibling distance=0.25cm},
+    level distance = 0.3cm,
+    % minimum size=1pt
+  ]
+
+  \tikzset{
+    cross/.style={
+      cross out,
+      draw,
+      minimum size=2*(#1-\pgflinewidth),
+      inner sep=0pt,
+      outer sep=0pt
+    },
+    normalnode/.style = {
+      circle,
+      thick,
+      scale = 2,
+      minimum size=1pt,
+      inner sep=0pt,
+      outer sep=0pt,
+      % mark size=1pt,
+      % color=red,
+      fill = black!90!black,
+      % fill = orange!90!blue,
+      % label = center:\textsf{\Large H}
+    },
+    isecnode/.style = {
+      normalnode,
+      minimum size=0.75pt
+    },
+    assocnode/.style = {
+      draw,
+      % circle,
+      rectangle,
+      gray,
+      % thick,
+      % scale = 2%,
+      % minimum size=1pt,
+      % inner sep=2.5pt,
+      inner sep=2pt,
+      % inner sep=1.5pt,
+      outer sep=0pt,
+      % fill = black!90!black,
+      % minimum size=4pt
+    },
+    active-node/.style = {
+      normalnode,
+      fill = red
+    },
+    active-edge/.style = {
+      color = red,
+      line width=1pt
+    },
+    inactive-edge/.style = {
+      color = black,
+      line width=0.5pt
+    },
+    empty-subtree/.style={
+      scale=0.8,
+      fill=gray,
+      label={[label distance=-0.25cm]270:$\bot$}
+    },
+    subtree/.style={
+      draw,
+      color = black,
+      fill = lightgray,
+      fill opacity=0.8,
+      % dashed,
+      shape border uses incircle,
+      isosceles triangle,
+      shape border rotate=90,
+      yshift=-0.5cm
+    },
+    query-arrow/.style={
+      decorate,
+      decoration={
+        snake,
+        amplitude=.05mm,
+        segment length=0.5mm,
+        post length=0.8mm
+      }
+    },
+    query-node/.style={
+      normalnode,
+      scale = 1.5,
+      darkgray
+    },
+    hline/.style={
+      gray,
+      thin,
+      densely dashed
+      %dashdotdotted
+    }
+  }
+
+  \tikzset{
+    itria/.style={
+      draw,
+      % dashed,
+      shape border uses incircle,
+      isosceles triangle,
+      shape border rotate=90,
+      % yshift=-1.45cm
+      yshift=-1.3cm
+    },
+    rtria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=90,
+      shape border rotate=-45,yshift=0.2cm,xshift=0.5cm},
+    ritria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=110,
+      shape border rotate=-55,yshift=0.1cm},
+    letria/.style={
+      draw,dashed,shape border uses incircle,
+      isosceles triangle,isosceles triangle apex angle=110,
+      shape border rotate=235,yshift=0.1cm}
+  }
+
+  \coordinate (height) at (0,-0.5);
+  \coordinate (width) at (1,0);
+
+  \node[normalnode, label={270:\scriptsize $ $}] (root) at (0,0) {}; % -- r
+  \node[normalnode, label={270:\scriptsize $ $}] (l4_0) at ($-1*(width) + 4*(height)$) {}; % -- a
+  \node[normalnode, label={270:\scriptsize $ $}] (l4_4) at ($ 2*(width) + 4*(height)$) {}; % -- e
+  \node[normalnode, label={270:\scriptsize $ $}] (l4_1) at ($.1*(width) + 4*(height)$) {}; % -- b
+  \node[normalnode, label={270:\scriptsize $ $}] (l4_2) at ($(l4_1)!0.33!(l4_4)$) {}; % -- c
+  \node[normalnode, label={270:\scriptsize $ $}] (l4_3) at ($(l4_1)!0.66!(l4_4)$) {}; % -- d
+  \node[normalnode, label={270:\scriptsize $ $}] (l2) at ($(l4_1)!0.5!(l4_2)-2*(height)$) {}; % -- x
+  \node[normalnode, label={270:\scriptsize $ $}] (l3) at ($(l4_3)!0.5!(l4_4)-1*(height)$) {}; % -- y
+  \node[normalnode, label={270:\scriptsize $ $}] (l1) at ($(l4_1)!0.5!(l4_4)-3*(height)$) {}; % -- z
+
+  \node[isecnode, label={90:\scriptsize $0$}] (start0) at ($(root)!0.125!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $1$}] (start1) at ($(root)!0.25!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $0$}] (start2) at ($(root)!0.375!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $1$}] (start3) at ($(root)!0.5!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $0$}] (start4) at ($(root)!0.625!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $1$}] (start5) at ($(root)!0.75!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $0$}] (start6) at ($(root)!0.875!(l4_0)$) {};
+  \node[isecnode, label={90:\scriptsize $1$}] (start7) at ($(root)!1!(l4_0)$) {};
+
+  \path (start0) -- (start0) -| node(end0) [normalnode,label={0:\scriptsize $1$}] {} ($(l4_4) + 0.5*0.8*(width)$);
+  \path (start1) -- (start1) -| node(end1) [normalnode,label={0:\scriptsize $2$}] {} ($(l4_4) + 1.0*0.8*(width)$);
+  \path (start2) -- (start2) -| node(end2) [normalnode,label={0:\scriptsize $3$}] {} ($(l4_4) + 0.5*0.8*(width)$);
+  \path (start3) -- (start3) -| node(end3) [normalnode,label={0:\scriptsize $4=w/2$}] {} ($(l4_4) + 1.5*0.8*(width)$);
+  \path (start4) -- (start4) -| node(end4) [normalnode,label={0:\scriptsize $5$}] {} ($(l4_4) + 0.5*0.8*(width)$);
+  \path (start5) -- (start5) -| node(end5) [normalnode,label={0:\scriptsize $6$}] {} ($(l4_4) + 1.0*0.8*(width)$);
+  \path (start6) -- (start6) -| node(end6) [normalnode,label={0:\scriptsize $7$}] {} ($(l4_4) + 0.5*0.8*(width)$);
+
+  \tikzset{
+    % Define arrow style
+    % >=stealth',
+    >=latex,
+    pil/.style={
+      ->,
+      %  thick,
+      % shorten <=0.5pt,
+      % shorten >=0.5pt,
+    }
+  }
+
+  \path ($(l4_0)-0.3*(width)$) node[inner sep=0pt] (scale_b) {} |- node[inner sep=0pt] (scale_a) {} (root);
+  \draw[<->,shorten <=-1.5pt,shorten >=-1.5pt] (scale_a) -- (scale_b) node[pos=0.5, left] {$w$};
+
+  \node at (end3) {} edge[pil,bend right=45] ($(end1) + (0.6em, 0)$)
+                     edge[pil,bend left=45] ($(end5) + (0.6em, 0)$);
+
+  \node at (end1) {} edge[pil,bend right=45] ($(end0) + (0.6em, 0)$)
+                     edge[pil,bend left=45] ($(end2) + (0.6em, 0)$);
+
+  \node at (end5) {} edge[pil,bend right=45] ($(end4) + (0.6em, 0)$)
+                     edge[pil,bend left=45] ($(end6) + (0.6em, 0)$);
+
+  % horizontal lines binary search
+  \draw[loosely dotted, gray, name path=hline0] (start0) -- (end0);
+  \draw[dotted, gray, name path=hline1] (start1) -- (end1);
+  \draw[loosely dotted, gray, name path=hline2] (start2) -- (end2);
+  \draw[densely dotted, gray, name path=hline3] (start3) -- (end3);
+  \draw[loosely dotted, gray, name path=hline4] (start4) -- (end4);
+  \draw[dotted, gray, name path=hline5] (start5) -- (end5);
+  \draw[loosely dotted, gray, name path=hline6] (start6) -- (end6);
+
+  % tree
+  \draw[name path=edge0] (root) -- (l4_0);
+  \draw[name path=edge1] (root) -- (l1);
+  \draw[name path=edge2]   (l1) -- (l2);
+  \draw[name path=edge3]     (l2) -- (l4_1);
+  \draw[name path=edge4]     (l2) -- (l4_2);
+  \draw[name path=edge5]   (l1) -- (l3);
+  \draw[name path=edge6]     (l3) -- (l4_3);
+  \draw[name path=edge7]     (l3) -- (l4_4);
+
+  % associated keys
+  \draw (start3) node[isecnode] {} node[assocnode] {}; % , label={90:\scriptsize $e0,l3$}
+  \draw (l2) node[isecnode, label={90:\scriptsize $1$}] {} node[assocnode] {};
+  \draw[name intersections={of=edge5 and hline3}] (intersection-1) node[isecnode, label={90:\scriptsize $0$}] {} node[assocnode] {};
+  \draw (l1) node[isecnode, label={90:\scriptsize $1$}] {} node[assocnode] {};
+  \draw[name intersections={of=edge3 and hline5}] (intersection-1) node[isecnode, label={[xshift=-1pt]90:\scriptsize $1$}] {} node[assocnode] {};
+  \draw[name intersections={of=edge4 and hline5}] (intersection-1) node[isecnode, label={[xshift=1pt]90:\scriptsize $0$}] {} node[assocnode] {};
+  \draw[name intersections={of=edge6 and hline6}] (intersection-1) node[isecnode, label={90:\scriptsize $0$}] {} node[assocnode] {};
+  \draw[name intersections={of=edge7 and hline6}] (intersection-1) node[isecnode, label={90:\scriptsize $1$}] {} node[assocnode] {};
+
+
+  % all intersections
+  \draw (l3) node[isecnode, label={90:\scriptsize $1$}] {}; % e5, l5
+  \draw (l4_1) node[isecnode, label={[xshift=-1pt]90:\scriptsize $1$}] {}; % e3, l7
+  \draw (l4_2) node[isecnode, label={[xshift=1pt]90:\scriptsize $1$}] {}; % e4, l7
+  \draw (l4_3) node[isecnode, label={90:\scriptsize $0$}] {}; % e6, l7
+  \draw (l4_4) node[isecnode, label={90:\scriptsize $1$}] {}; % e7, l7
+  \draw[name intersections={of=edge1 and hline0}] (intersection-1) node[isecnode, label={90:\scriptsize $1$}] {};
+  \draw[name intersections={of=edge2 and hline2}] (intersection-1) node[isecnode, label={90:\scriptsize $0$}] {};
+  \draw[name intersections={of=edge3 and hline4}] (intersection-1) node[isecnode, label={[xshift=-1pt]90:\scriptsize $0$}] {};
+  \draw[name intersections={of=edge3 and hline6}] (intersection-1) node[isecnode, label={[xshift=-1pt]90:\scriptsize $0$}] {};
+  \draw[name intersections={of=edge4 and hline4}] (intersection-1) node[isecnode, label={[xshift=1pt]90:\scriptsize $1$}] {};
+  \draw[name intersections={of=edge4 and hline6}] (intersection-1) node[isecnode, label={[xshift=1pt]90:\scriptsize $1$}] {};
+  \draw[name intersections={of=edge5 and hline2}] (intersection-1) node[isecnode, label={90:\scriptsize $1$}] {};
+  \draw[name intersections={of=edge5 and hline4}] (intersection-1) node[isecnode, label={90:\scriptsize $0$}] {};
+\end{tikzpicture}
