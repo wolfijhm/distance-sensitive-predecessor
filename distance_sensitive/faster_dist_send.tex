@@ -1,0 +1,99 @@
+\documentclass[11pt]{llncs}
+\usepackage{fullpage}
+\usepackage{amsmath}
+\newcommand{\Oh}[1]
+    {\ensuremath{\mathcal{O}\!\left( {#1} \right)}}
+\newcommand{\access}
+    {\ensuremath{\mathsf{access}}}
+\newcommand{\occ}
+    {\ensuremath{\mathsf{occ}}}
+\newcommand{\prank}
+    {\ensuremath{\mathsf{prank}}}
+\newcommand{\rank}
+    {\ensuremath{\mathsf{prank}}}
+\newcommand{\frank}
+    {\ensuremath{\mathsf{rank}}}
+
+\newcommand{\select}
+    {\ensuremath{\mathsf{select}}}
+\newcommand{\IGNORE}[1]{}
+\newcommand{\exit}[1]{\operatorname{exit}(#1)}
+\begin{document}
+
+\IGNORE{
+We will prove how to reduce the query time from $O(\log\log d(x,S))$ to $O(\log\frac{\log d(x,S)}{\log w})$. The idea is to cut the universe into pieces of size $b=\sqrt{w}$. Then for interval $[b(i-1)+1,bi]$ numbered $i$ store a local predecessor data structure over universe over universe $b=\sqrt{w}$. The predecessor data structure will actually fit in a single word as each key occupies $\frac{\log w}{2}$ bits for an overall space usage of less than $\sqrt{w}\log w/2$ bits. A predecessor search can be answered in constant time on such blocks. We store an mmphf for all the blocks that contain at least one key. That is for there exists a key $y\in S$ with $y\in [b(i-1)+1,bi]$ we add $b(i-1)+1$ to the mmphf. Overall the space will be $O(n\log w)$ bits of space. 
+
+For a given key $x\in [b(i-1)+1,bi]$ will search for predecessor data structure of block $i$. If block $i$ contains at least one key then we do predecessor search on it. Otherwise if block $i-1$ contains at least one key, then the predecessor is the larger key in block $i-1$. Otherwise, we try block $i+1$ and if it contains at least one key, then we compute the successor of $x$ which the smallest key in block $i+1$. Finally if block $i+1$ does not contain any key we start to probe keys of decreasing lengths $w-2^{2^i}$ starting from length $w-\log w/2$. 
+}
+\section{Faster fat-binary search}
+We build a z-fast trie with arity $\log w/2$. For each node $\alpha$ we store the children labels in a children predecessor data structure $D_\alpha$. The number of children will be upper-bounded by $\sqrt{w}$. The children predecessor data structure $D_\alpha$ will be just an array of labels in sorted order. The array will thus use just $O(\log w)$ bits per label. 
+Thus the children predecessor data structure $D_\alpha$ fits in at most $\sqrt{w}\cdot {\log w}$ bits and a predecessor search can be done in constant time using bit-parallel operations. Over all the nodes the total space of the $D_\alpha$ for all $\alpha$ will be $O(n\log w)$ bits. 
+The crucial difference between the new definition and the old one is that the z-fast trie is now built on strings over alphabet $[2^{\lceil\log w/2\rceil}]$. In order to build the z-fast trie we consider all the keys as strings of length $\frac{w}{\lceil\log w/2\rceil}$ (assume for simplicity that the length is an integer and a power of two). That is we consider every group of $\frac{w}{\lceil\log w/2\rceil}$ consecutive bits as a character in alphabet $[2^{\frac{w}{\lceil\log w/2\rceil}}]$
+The usual definition of the z-fast trie like the name, extent and handles of nodes are all unchanged except for the difference that they are now strings over alphabet $[2^{\lceil\log w/2\rceil}]$ instead of alphabet $\{0,1\}$. The implementation of function $T$ is also the same as before. In addition to function $T$, we add children predecessor search and attach it to the parent. This add $O(n\log w)$ bits to the total space. 
+The definition of exit node is also slightly changed. It is now defined as:
+\begin{enumerate}
+\item the only node $\alpha$ such that $n_\alpha$ is a prefix of $x$ and either $e_\alpha=x$ or $e_\alpha$ is not a prefix of $x$ if such a node exists (in this case we call it exit node of type $1$). 
+\item if such a node does not exist, then the exit node will be the only node $\alpha$ such that $e_\alpha$ is prefix of $x$ and for any child $\beta$ of $\alpha$ we have that $n_\beta$ is not a prefix of $x$ (in this case $\alpha$ is called type $2$ exit node). 
+\end{enumerate}
+Now the fat-binary search is also unchanged except that the returned exit node has a slightly different definition. In order to finish a predecessor search we need a final step. We first determine whether the type of the exit node $\alpha=\exit x$ as follows: we use the range locator to determine the extent of $\alpha$. If $e_\alpha$ is prefix of $x$ but $e_\alpha\neq x$ then we conclude that we have a type $1$ exit node. Otherwise, we conclude that we have a type $2$ exit node. 
+If the $\alpha$ was an exit node of type $1$, then the predecessor search is finished exactly as before. On the other hand if the exit node is of type $2$ then we finish the search as follows: we use extract character $c=x[|e_\alpha|+1]$ and do a predecessor search for $c$ on $D_\alpha$. This predecessor search returns the label of a node $\beta$ which is child of $\alpha$. The name of $\beta$ will be obtained by concatenating $e_\alpha$ with the label of $\beta$. Finally the predecessor of $x$ will be the last element in the range under $\beta$ which can obtained by calling the range locator for $n_\beta$. 
+Once we have recognized the type of the exit node, we can conclude the predecessor search as follows:
+\section{Faster Short Distance sensitive predecessor search}
+We now do short distance sensitive predecessor search in time $O(\log\frac{\log d(x,S)}{\log w})$. Once we get to level $\log\log d(x,S)-\log\log w$, we do fat binary search. The fat-binary search stops after $\log\log d(x,S)-\log\log w$ steps and the final search is done as describes in the previous section. Of course the definition of $P$ and $Q$ are changed to reflect the fact that now all the keys are viewed as strings over alphabet $[2^{\lceil\log w/2\rceil}]$. Thus $P$ is redefined as follows:
+
+\[
+	P=\bigl\{\,x\bigl[0..\frac{w}{\lceil\log w/2\rceil}]-2^{2^i}\bigr) \mid x \in  S \text{ and }
+	i=0,1,\dots,\lfloor\log(\log \frac{w}{\lceil\log w/2\rceil} - 1)\rfloor\,\bigr\}.
+\]
+And $Q$ keeps exactly the same definition. 
+\[
+Q=\bigcup_{\text{node $\alpha$}}\min{}_\preceq\{\,p\in P\mid n_\alpha\preceq p\preceq e_\alpha\,\}
+\]
+Now the algorithm for short distance sensitive search is exactly as before except that the searched key $x$ is now considered as a key over alphabet $[2^{\lceil\log w/2\rceil}]$ and that the number of iteration of the while loop is upper bounded by $\frac{w}{2\lceil\log w/2\rceil}$ instead of $w/2$
+\begin{theorem}
+\label{thm:pred-short}
+We can build an index that returns the predecessor of $x$
+in time $O(\log\frac{\log d(x,S)}{\log w})$, and requires $O(n \log w )$
+bits of space (in addition to the space needed to store the elements of $S$).
+\end{theorem}
+
+
+%To see why the search now takes $O(\log\frac{\log d(x,S)}{\log w})$. The reason is that whenever $d(x,S)\leq $
+\section{Faster and smaller long sensitive search}
+We show how to achieve $O(\log\frac{w-\log D(x,S)}{\log w})$ query time with space $O(n\log\log w)$ bits. 
+We first cut the table into blocks of size $b=\log w$ keys. Then we build a new table that contains the first key of each block which thus contains $n/\log w$ keys in total. We let $S'$ denote that set of elements. It is easy to see that $D(x,S')\geq D(x,S)$ for any $x$. 
+We build a distance sensitive index on this new table. This index will occupy space $O(n)$ bits in total. We now show how to index each block using $\log\log w$ bits per key. We will build a local index on each block but only on the $\log^2 w$ most significant bits of the keys in each block. We divide each block into $\sqrt{\log w}$ sub-blocks each containing $\sqrt{\log w}$ keys forming a tree with two levels and nodes having fan-out $\sqrt{\log w}$. The upper level will have one node that indexes all the first keys in the sub-blocks. For each node, we build an index consisting in a compacted trie on the $\log^2 w$ MSBs of the keys in the node. Such an index will use $2(\log\ell+1)$ bits per key where $\ell$ is the length of the keys. It was described by Grossi et al~\cite{GRR09} and is called an SB-node and is based on the string B-tree approach~\cite{FG99}. The main property of the local index is that after probing the index, we can answer to a predecessor query by only reading one single key . In our case, we will index only the $\log^2 w$ MSBs of the keys stored in each node and thus use $2\log\log w$ bits per key. In order to answers queries for each node, we will use a precomputed table that will give us the position to be probed in the table in constant time, based on the node encoding. The precomputed table stores all the answers for all the queries for all possible SB-nodes. Note that the node stores $\sqrt{\log w}$ elements and is encoded using a patricia trie that occupies $2(\log\ell+1)=O(\log(\log^2w))=O(\log\log w)$ bits per element. The precomputed table will thus use $2^{O(\sqrt{\log w}\cdot \log\log w)}\cdot\log^2w\cdot\frac{1}{2}\log\log w=o(w)$ bits of space to store the answers to all possible queries (that is to give) on a node. That is the total number of possible nodes is  $2^{O(\sqrt{\log w}\cdot \log\log w)}$, a query is description needs $\log^2w$ bits,  and the answer to query is a position among $\sqrt{\log w}$ keys which needs $\frac{1}{2}\log\log w$ bits to be described.
+
+\paragraph{Long-distance sensitive queries}
+A long-distance sensitive query will be done exactly (algorithm 3) as before except that now that the searched key $x$ is now considered as a key over alphabet $[2^{\lceil\log w/2\rceil}]$. As before we start searching for prefixes of $x$ of lengths $2^{2^i}$ for $i=1,2,\ldots$ (which translates to lengths $2^{2^i}\log w$ bits) in order to find the longest prefix of length of the form $2^{2^i}$ and then complete by a call fat-binary search to find the predecessor among the sampled keys (recall that we are sampling only one every $\log w$ keys) and we will have isolated one block of size $b=\log w$ that contains the predecessor of $x$. To complete the search for the predecessor among all the keys of $S$, we do the following: if the search stopped and called the fat-binary search at step $i$, we first check whether $i\leq\log\log w$:
+\begin{enumerate}
+\item If this is not the case (that is $i>\log\log w$), We complete the search with a binary search on the block of the predecessor that contains $\log w$ elements in $O(\log\log w)$ time. Note that the fact that $D(x,S)\geq 2^{w-\log^2w}$ automatically means that $D(x,S')\geq 2^{w-\log^2w}$ which in turn implies that the search finishes before step $\log\log w$. Thus the search finishing after step $\log\log w$ implies that $D(x,S)< 2^{w-\log^2w}$ and thus that $\log\log w\leq \log\frac{w-\log D(x,S)}{\log w}$
+\item If this was the case (that is $i\leq\log\log w$), then we do a local predecessor search on $x'$ (where $x'$ is formed with the $\log^2 w$ MSBs of $x$) on the keys of the block using the local index. If we find a single key $y$ whose $\log^2 w$ MSBs are equal $x'$, then we are done as we only need to compare $x$ and $y$. If we have found a range of more than one whose key $\log^2 w$ MSBs are equal  to $x'$, then we check that $x$ is in between the largest and the smallest keys of the range that share $x'$ (keys that have $x'$ as their $\log^2w$ MSBs). Then we have two cases
+\begin{enumerate}
+\item If we find that it is not the case (that is that $x$ is smaller or larger than all the keys that have $x'$ as their $\log^2w$ MSBs), then we can have effectively found the predecessor of $x$ which will be either the largest keys that have $x'$ as its $\log^2w$ MSBs or the predecessor of the first key $x'$ as its $\log^2w$ MSBs. 
+\item If this was the case then we know for sure that $\log D(x,S)\leq w-\log^2 w$ and just do binary search on the whole block in time $O(\log\log w)$  which is within our target query time as we have $\log\frac{w-\log D(x,S)}{\log w}\geq \log\frac{w-(w-\log^2w)}{\log w}=\log\log w$. 
+\end{enumerate}
+\end{enumerate}
+It is trivial to transform a long-distance sensitive result into a globally sensitive result and get the following theorem. 
+\begin{theorem}
+\label{thm:pred-long2}
+We can build an index that returns the predecessor of $x$
+in time $O(\log\frac{w-\log n-\log D(x,S)}{\log w})$, and requires $O(n \log\log w )$
+bits of space (in addition to the space needed to store the elements of $S$).
+\end{theorem}
+
+\section{Faster Finger Search}
+The finger search result can easily be deduced from the log-distance predecessor result. The details are omitted. 
+\begin{theorem}
+\label{th:finger}
+We can build an index that returns the predecessor of an input string $x$ given
+a finger $y\in S$, with $y<x$, in time $O(\log\frac{\log|x-y|-\log D(x,S)}{\log w})$ using  
+$O(n w^{1/c})$ bits 
+of space, for any $c$ (in addition to the space needed to store the elements of $S$).
+\end{theorem}
+
+
+\bibliographystyle{plain}
+\bibliography{faster_dist_sens}
+
+\end{document}
