@@ -108,65 +108,142 @@ finger.
 
 \section{Introduction}
 
-In this paper we study the \emph{predecessor problem} on a \emph{static} set
-$S$ of binary strings of length $w$. It is known from recent
-results~\cite{PatrascuTh06,PatrascuTh07} that structures \emph{\` a la} van Emde Boas
-(e.g., y-fast tries~\cite{Willard83}) using time $O(\log w)$ are optimal among those
-using linear space. The lower bound proved in~\cite{PatrascuTh06,PatrascuTh07} has
-actually several cases, another one is realised, for instance, in
-exponential trees~\cite{AnderssonTh07}. A very comprehensive discussion 
-of the literature can be found in Mihai P{\v a}tra{\c s}cu's
+Predecessor searching is one of the oldest problems in 
+theoretical computer science~\cite{CormenLeRiSt09,Knuth98}.
+Let $U$ be a totally ordered universe. The task
+is to maintain a set $S \subseteq U$,
+while supporting
+\emph{predecessor} and \emph{successor} queries: 
+given $q \in U$, find the largest element in $S$ 
+smaller than $q$ ($q$'s predecessor) or the 
+smallest element in $S$ larger than $q$
+($q$'s successor). In the \emph{dynamic}
+version of the problem, we also want to 
+be able to modify $S$ by inserting and/or 
+deleting elements.
+
+In the \emph{word-RAM } model of computation,
+all input elements are $w$-bit words, where
+$w \in \N$ is a parameter. Without loss of 
+generality, we may assume that $w$ is a power 
+of $2$. We are allowed to manipulate the input 
+elements at the bit level, in constant time per 
+operation. In this case, we may assume that the 
+universe is $U = \{0, \dots, 2^{w}-1\}$. 
+A classic solution for predecessor searching on the
+word-RAM is due to van Emde Boas, who
+described a dynamic data structure that
+requires space $O(n)$ and supports insertions,
+deletions, and predecessor queries in $O(\log w)$ 
+time~\cite{vEmdeBoas77,vEmdeBoasKaZi76}.
+
+
+It was recently shown by Patrascu and 
+Thorup~\cite{PatrascuTh06,PatrascuTh07} 
+that structures \emph{\` a la} van Emde Boas 
+(e.g., $y$-fast tries~\cite{Willard83}) with query
+time $O(\log w)$ are optimal, if we require 
+the space usage to be linear. In fast, the lower bound 
+of Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
+has several cases, another one being realised, for 
+instance, in exponential trees~\cite{AnderssonTh07}. 
+A very comprehensive discussion of the literature 
+can be found in Mihai P{\v a}tra{\c s}cu's
 thesis~\cite{Patrascu08}.
 
-Albeit the match between upper and lower bounds settles up the problem in the
-worst case, there is a lot of space for improvement in two directions: first of
-all, if access to the original set $S$ (as a sorted array) is available, 
-it is in principle possible to devise an index using \emph{sublinear} additional space
-and still answer predecessor queries in optimal time; second, one might
-try to improve upon the lower bound by making access time dependent on the
-structure of $S$ or on some property relating the query string $x$ to the set
-$S$.
+Even though this settles the worst-case complexity 
+of the predecessor searching problem, there is a lot 
+of room for improvement in two directions: first, if 
+we have access to the original set $S$ (as a sorted array), 
+we could in principle devise an index using 
+\emph{sublinear} additional space and still answer 
+predecessor queries in optimal time; second, we could
+obtain a more nuanced picture of the problem time by 
+making the query time dependent on the structure of $S$ 
+or on some property relating the query string $q$ to 
+the set $S$.
 
-In this paper, we describe sublinear indices that
-provide significant improvements over previous bounds\footnote{Our space bounds
-are always given in terms of the additional number of bits besides those that
-are necessary to store $S$.}. Given a set $S$, we denote with $x^-$ and $x^+$
-the predecessor and successor in $S$ of a query string $x$, and let $d(x,S) =
-\min\{x^+-x,x-x^-\}$ and $D(x,S) = \max\{x^+-x,x-x^-\}$. Note that $d(x,S)$ is small when $x$ is close to some element of $S$, whereas $w-D(x,S)$
-is small when $x$ is far from at least one of $x^\pm$.
-Finally, let $\Delta_M$ and $\Delta_m$ be the maximum and minimum distance, respectively,
+More concretely, suppose our data structure currently contains the
+set $S \subseteq U$, and let $q \in U$ be a query
+element.  Let $q^+ := \min\{s \in S \mid s \geq q \}$ and
+$q^- := \max\{s \in S \mid s < q \}$ be the 
+successor and the predecessor of $q$ in $S$, and let
+$d(q, S) = \min\{|q - q^-|, |q - q^+|\}$ and 
+$D(q, S) = \max\{|q - q^-|, |q - q^+|\}$.
+Then, $d(q, S)$ is small when $q$ is close to an 
+element of $S$, whereas $w - \log D(q, S)$
+is small when $q$ is far from at least one of $q^\pm$.
+Finally, let $\Delta_M$ and $\Delta_m$ be the maximum 
+and minimum distance, respectively,
 between two consecutive elements of $S$.
 
+In 2013, Bose~\etal~\cite{BoseDoDuHoMo13} described
+a word-RAM data structure for the dynamic predecessor
+problem that is \emph{local} with respect to updates
+and queries.
+In particular, their structure can answer predecessor 
+and successor queries and perform updates 
+in $O\big(\log\log d(q, S)\big)$ time.
+It requires $O\big(n w \log\log w)$ bits 
+of space, where $n = |S|$ is the size of the 
+current set. Bose~\etal apply their structure 
+to obtain a fast data structure for approximate nearest 
+neighbor queries in low dimensions and for answering
+dominance and range searching queries on a grid.
+
+Here, we describe data structures for the
+static and dynamic predecessor problem
+on the word RAM that provide significant 
+improvements over previous bounds.\footnote{Our 
+space bounds are always given as the
+number of bits \emph{in addition} to those needed for 
+representing $S$.}. 
+
 \begin{enumerate}
-  \item We match the static worst-case search time $O(\log\log d(x,S))$
-  of~\cite{BoseDoDuHoMo13}, which was obtained using space $O(n w \log
-  \log w)$, but our index requires just $O(n\log w)$ additional space (and
-  thus overall linear space).
-  \item We improve exponentially over \emph{interval-biased search
-  trees}~\cite{BilleLaRaSaSaWe15}, answering predecessor queries in time\footnote{The
-  bound in~\cite{BilleLaRaSaSaWe15} is $O(w-\log(x^+-x^-))$. Our proofs are correct
-  even replacing $D(x,S)$ with $x^+-x^-$, but the difference is immaterial as
-  $x^+-x^-\leq 2D(x,S)$, and we like the duality with the previous bound
-  better.} $O(\log(w-\log D(x,S)))$, again using just $O(n\log w)$ additional bits of
-  space.
-  \item We improve exponentially over \emph{interpolation
-  search}~\cite{DemaineJoPa04}, answering
-  predecessor queries in time $O(\log\log(\Delta_M/\Delta_m))$,
-  always using just $O(n\log w)$ additional bits of space.
-  \item Finally, with slightly more (but still sublinear) space we can exploit a
-  \emph{finger} $y\in S$ to speed up our second result to $O(\log(\log|x-y|-\log D(x,S)))$, which is in
+  \item We match the static worst-case search time 
+  $O\big(\log\log d(q, S)\big)$
+  of Bose~\etal~\cite{BoseDoDuHoMo13}, but our index requires 
+  just $O(n\log w)$ additional bits of space (and thus overall 
+  linear space).
+  \item Using $O(nw)$ bits, we can also match the dynamic
+  update and search time $O\big(\log\log d(q, S)\big)$
+  of Bose~\etal~\cite{BoseDoDuHoMo13}.
+  \item We improve exponentially over the \emph{interval-biased search
+  trees} of Bille~\etal~\cite{BilleLaRaSaSaWe15}, answering 
+  predecessor queries in time\footnote{The
+  bound of Bille~\etal~\cite{BilleLaRaSaSaWe15} is 
+  $O(w - \log(q^+ - q^-))$. Our 
+  proofs are correct even replacing $D(q, S)$ with $q^+ - x^-$, but 
+  the difference is immaterial as $q^+ - q^-\leq 2D(q, S)$, and 
+  we like the duality with the previous bound better.} 
+  $O\big(\log(w - \log D(q, S))\big)$, again using just 
+  $O(n\log w)$ additional bits of space.
+  \item We improve exponentially over the \emph{interpolation
+  search} of Demaine~\etal~\cite{DemaineJoPa04}, answering
+  predecessor queries in time 
+  $O\left(\log\log(\Delta_M / \Delta_m)\right)$, always using 
+  just $O(n\log w)$ additional bits of space.
+  \item Finally, with slightly more (but still sublinear) space 
+  we can exploit a \emph{finger} $y \in S$ to speed up our second 
+  result to $O\left(\log(\log|q - y| - \log D(q, S))\right)$, which is in
   some cases better than the bound reported
-  in~\cite{AnderssonTh07}, and improves exponentially over
-  interval-biased search trees, which need time  $O(\log(2^w-y)-\log
-  D(x,s))$~\cite{BilleLaRaSaSaWe15}.
+  by Andersson and Thorup~\cite{AnderssonTh07}, and improves 
+  exponentially over interval-biased search trees, which need 
+  time  
+  $O\left(\log(2^w - y) - \log D(q, S)\right)$~\cite{BilleLaRaSaSaWe15}.
 \end{enumerate}
 
-We remark that combining the first two results we show that predecessor search can be 
-performed in time  $O(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\})$ using $O(n\log w)$ 
-bits of additional space. Our results are obtained starting from a refined version of
-\emph{fat binary search in a z-fast trie}~\cite{BelazzouguiBoPaVi09} in which the initial search interval
-can be specified under suitable conditions, confirming the intuition that fat
-binary search can be used as a very versatile building block for data structures.
+We remark that a combination of the first
+and the third result shows that static predecessor 
+search can be performed in time  
+$O\left(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\}\right)$ 
+with $O(n \log w)$ bits of additional space. Our 
+results are obtained starting from a refined version of
+\emph{fat binary search in a $z$-fast trie}~\cite{BelazzouguiBoPaVi09} 
+in which the initial search interval can be specified under 
+suitable conditions, confirming the intuition that fat
+binary search can be used as a very versatile building block 
+for data structures.
 
 \section{Notation and tools}
 \label{sec:notation}
