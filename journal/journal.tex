@@ -109,37 +109,35 @@ finger.
 
 \section{Introduction}
 
-Predecessor searching is one of the oldest problems in 
-theoretical computer science~\cite{CormenLeRiSt09,Knuth98}.
-Let $U$ be a totally ordered universe. The task is to 
-maintain a set $S \subseteq U$, while supporting
-\emph{predecessor} and \emph{successor} queries: 
-given $q \in U$, find the largest element in $S$ 
-smaller than $q$ ($q$'s predecessor) or the smallest 
-element in $S$ larger than $q$ ($q$'s successor). 
-In the \emph{dynamic} version of the problem, we also 
-allow modification of $S$ by inserting and/or deleting 
-elements.
+Predecessor searching is one of the oldest problems in theoretical 
+computer science~\cite{CormenLeRiSt09,Knuth98}: let $U$ be a totally
+ordered universe. The task is to maintain a set $S \subseteq U$, 
+while supporting \emph{predecessor} and \emph{successor} queries: 
+given $q \in U$, find the largest element in $S$ smaller than $q$ 
+($q$'s predecessor) or the smallest element in $S$ larger than $q$ 
+($q$'s successor). In the \emph{dynamic} version of the problem, we
+also allow modification of $S$ by inserting and/or deleting elements.
 
-In the \emph{word-RAM} model of computation, all input 
-elements are $w$-bit words, where $w \in \N$ is a
-parameter. Without loss of generality, we may assume 
-that $w$ is a power of $2$. This does not change the
-asymptotic bounds. The model lets us manipulate the 
-input elements at the bit level, in constant time per 
-operation. On the word-RAM, we may assume that the 
-universe is $U = \{0, \dots, 2^{w}-1\}$. A classic 
-solution for predecessor searching on the word-RAM is 
-due to van Emde Boas, who described a dynamic data 
-structure that requires space $O(n)$ and supports 
+In the \emph{word-RAM} model of computation, all input elements are 
+$w$-bit words, where $w \in \N$ is a parameter. Without loss of 
+generality, we may assume that $w$ is a power of $2$. This does not 
+change the asymptotic bounds. The model lets us manipulate the input 
+elements at the bit level, in constant time per operation. On the 
+word-RAM, we may assume that the universe is 
+$U = \{0, \dots, 2^{w}-1\}$. A classic solution for predecessor 
+searching on the word-RAM is due to van Emde Boas, who described a 
+dynamic data structure that requires space $O(n)$ and supports 
 insertions, deletions, and predecessor queries in 
-$O(\log w) = O(\log\log |U|)$ 
-time~\cite{vEmdeBoas77,vEmdeBoasKaZi76,CormenLeRiSt09}.
-Here, $n$ denotes the current size of the set $S$.
+$O(\log w) = O(\log\log |U|)$ time~\cite{vEmdeBoas77,vEmdeBoasKaZi76,CormenLeRiSt09}.
+Here, $n$ denotes the current size of the set $S$. This data 
+structure is now commonly known as the 
+\emph{van-Emde-Boas tree}.
 
-
-\Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
-recently showed that structures similar to van Emde Boas 
+For the classic pointer machine model of computation, it has been 
+known for a long time that a variant of the van-Emde-Boas tree 
+provides optimal performance~\cite{MehlhornNaAl88,Mulzer09}.
+For the word RAM, \Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
+recently showed that structures similar to van-Emde-Boas 
 trees (e.g., $y$-fast tries~\cite{Willard83}) with query
 time $O(\log w)$ are optimal, assuming that we require 
 the space usage to be linear in $|S|$. In fact, the lower 
@@ -152,11 +150,11 @@ thesis~\cite{Patrascu08}.
 
 These results settle the worst-case complexity 
 of predecessor searching. However, there is 
-room for improvement in two directions: firstly, if 
+still room for improvement: first, if 
 we have access to the original set $S$ (as a sorted array), 
 we could in principle devise an index using 
 \emph{sublinear} additional space and still answer 
-predecessor queries in optimal time; secondly, we could
+predecessor queries in optimal time; second, we could
 obtain a more nuanced picture of the problem time by 
 making the query time dependent on the structure of $S$ 
 or on the relationship between the query element $q$ 
@@ -187,7 +185,7 @@ of space, where $n = |S|$ is the size of the
 current set. Bose~\etal apply their structure 
 to obtain a fast data structure for approximate nearest 
 neighbor queries in low dimensions and for answering
-dominance and range searching queries on a grid.
+dominance and range searching queries on a grid~\cite{BoseDoDuHoMo13}.
 
 Here, we describe data structures for the
 static and dynamic predecessor problem
@@ -245,26 +243,44 @@ for data structures.
 \section{Notation and tools}
 \label{sec:notation}
 
-We use von Neumann's definition and notation for natural numbers, 
-i.e., we identify $n=\{\?0, 1, \dots, n-1\?\}$, so
-$2=\{\?0,1\?\}$ and $2^*$ is the set of all binary strings.
-For a string $x \in \{0, 1\}^*$ and $a, b \in \N$, we write 
-$x[a \.. b]$ for the substring of $x$ starting at position
+%We use von Neumann's definition and notation for natural numbers, 
+%i.e., we identify $n=\{\?0, 1, \dots, n-1\?\}$, so
+%$2=\{\?0,1\?\}$ and $2^*$ is the set of all binary strings.
+For $k \in \N$, we denote by $\{0, 1\}^k$ the set of all binary 
+strings of length $k$, and by 
+$\{0,1\}^* = \bigcup_{k = 0}^{\infty} \{0, 1\}^k$ the set of all
+finite binary strings. The length of $x \in \{0, 1\}^*$ 
+is denoted by $|x|$.
+For a string $x \in \{0, 1\}^*$ and $a, b \in \N$ with $a \leq b$, 
+we write $x[a \.. b]$ for the substring of $x$ starting at position
 $a$ (inclusive) and ending at position $b$ (exclusive). 
 The indices start from $0$. We abbreviate $x[a \.. a]$ as $x[a]$.
-The symbol $\preceq$ denotes prefix order, and $\prec$ is its strict version. Given a prefix $p$, we
-denote with $p+1$ and $p-1$ the strings in $2^{|p|}$ that come before and after
-$p$ in lexicographical order; in case they do not exist, we assume by convention
-that the expressions have value $\bot$. 
-All logarithms in this paper are binary and we postulate that $\log x=1$
-whenever $x<2$.
+The symbol $\preceq$ denotes prefix order, and $\prec$ is its 
+strict version.\wolfgang{Define prefix order?} Given a string 
+$x \in \{0,1\}$, we denote with $x + 1$ and $x - 1$ the strings in 
+$\{0, 1\}^{|x|}$ that come before and after $x$ in lexicographic 
+order. We use the convention that $0^k - 1 = 1^k + 1 = \bot$, for 
+$k \in \N$, since in this case the predecessor and the successor do 
+not exist. We will use binary logarithms throughout, and we set 
+$\log x :=1$ for $x \leq 2$.
 
-Given a set $S$ of $n$ binary strings of length $w$, we let
+Let $w \in \N$ be a power of two. We work in the standard word RAM 
+model with word-length $w$. We assume that our word RAM can multiply
+two $w$-bit words in constant time, and we adopt the full 
+randomness assumption for hashing~\wolfgang{Reference?}. Note, 
+however, that these two assumptions  dependence on multiplication and full randomness is only due to the
+need to store functions succinctly; for the rest, our algorithms do not depend
+on them.
+\wolfgang{Cite a specific theorem for this, similar to Theorem 9.1}
+
+Given a set $S \subseteq \{0, 1\}^w$ of $n$ binary strings of 
+length $w$, we consider $S$ to be ordered according to the 
+lexicographic order, and we set
 \begin{align*}
-	x^- &= \max\{\?y \in S \mid y< x\?\} &&\text{(the \emph{predecessor} of
-	$x$ in $S$)}\\
-	x^+ &= \min\{\?y \in S \mid y\geq x\?\} && \text{(the \emph{successor} of
-	$x$ in $S$)},
+     x^- &= \max\{\?y \in S \mid y< x\?\} &&\text{(the \emph{predecessor} of
+     $x$ in $S$)}\\
+    x^+ &= \min\{\?y \in S \mid y\geq x\?\} && \text{(the \emph{successor} of
+    $x$ in $S$)},
 \end{align*}
 where $\leq$ is the lexicographic order. A \emph{predecessor/successor} query is
 given by a string $x$, and the answer is $x^\pm$. In this paper, for the sake
@@ -273,16 +289,33 @@ also because our algorithms actually return the \emph{rank} of the predecessor
 in $S$, and thus are in principle more informative (e.g., the successor can be
 immediately computed adding one to the returned index).
 
+\paragraph{Hash Maps.}
+Our data structure also makes extensive use of
+hashing. In particular, we will maintain several
+succinct hashtables that store additional
+information for supporting fast queries.
+For this, we will use a hashtable described
+by Demaine~\etal~\cite{DemaineMePaPa06}.
+The following theorem summarizes the properties
+of their data structure.
+
+\begin{theorem}\label{thm:succinct_retrieval_only_hashtable}
+For any $r \geq 1$, there exists a dynamic dictionary that
+stores entries with keys from $U$ and with associated
+values of $r$ bits each.
+The dictionary supports updates and queries in $O(1)$ time,
+using $O(n \log\log (|U|/n) + nr)$ \emph{bits} of space.
+The bounds for the space and the queries are
+worst-case, the bounds for the updates hold with
+high probability.\qed
+\end{theorem}
+
 We assume to be able to store a constant-time $r$-bit function on $n$ keys using
 $rn+cn +o(n)$ bits for some constant $c\geq 0$: the function may return
 arbitrary values outside of its domain (for practical implementations
 see~\cite{BelazzouguiBoPaVi11}).
 
-We work in the standard RAM model with a word of length $w$, allowing
-multiplications, and adopt the full randomness assumption. Note, however, 
-that the dependence on multiplication and full randomness is only due to the
-need to store functions succinctly; for the rest, our algorithms do not depend
-on them.
+
 
 \subsection{Z-fast tries} 
 
