@@ -264,6 +264,7 @@ $k \in \N$, since in this case the predecessor and the successor do
 not exist. We will use binary logarithms throughout, and we set 
 $\log x :=1$ for $x \leq 2$.
 
+\paragraph{The word RAM.}
 Let $w \in \N$ be a power of two. We work in the standard word RAM 
 model with word-length $w$. We assume that our word RAM can multiply
 two $w$-bit words in constant time, and we adopt the full 
@@ -319,11 +320,62 @@ see~\cite{BelazzouguiBoPaVi11}).
 
 \subsection{Z-fast tries} 
 
-We start by defining some basic notation for compacted tries. Consider the compacted
-trie~\cite{Knuth98} associated with a prefix-free set of strings\footnote{Albeit
-the results of this paper are discussed for sets of strings
-of length $w$, this section provides results for arbitrary sets of prefix-free strings whose length is
-$O(w)$.} $S\subseteq 2^*$. \begin{figure}[t]
+\paragraph{Compressed Tries.}
+Our data structure is based on \emph{compressed
+tries}~\cite{CormenLeRiSt09,Knuth98}. These are defined as
+follows: we interpret the elements from $S$ as bitstrings 
+of length $w$ (the most significant bit being in the leftmost
+position). The \emph{trie} $T'$ for $S$ is a binary tree
+of height $w$. Each node $v \in T'$ corresponds
+to a bitstring $e_v \in \{0,1\}^*$. The root $r$ has
+$e_r = \eps$. For each inner node $v$, the left
+child $u$ of $v$  has $e_u = e_v0$, and the
+right child $w$ of $v$ has $e_w = e_v1$ (one of the
+two children may not exist). The bitstrings of the 
+leaves correspond to the elements of $S$, and
+the bitstrings of the inner nodes are prefixes
+for the elements in $S$, see Figure~\ref{fig:trie}.
+
+\begin{figure}
+  \centering
+  \includegraphics{trie}
+  \caption{A trie (left) and a compressed trie (right) for the set 
+  000, 100, 110, 111. The longest common prefix of 101 is  10. The 
+  lca of 101 in the compressed trie
+    is the node labeled 1.}
+  \label{fig:trie}
+\end{figure}
+
+The \emph{compressed trie} $T$ for $S$ is obtained
+from $T'$ by contracting each maximal path of nodes
+with only one child into a single edge. 
+Each inner node in $T$ has exactly two children, and
+consequently $T$ has $O(n)$ nodes.
+In particular, the root of $T$ is the highest node of $T'$
+that has two children.
+Maybe somewhat unusually, in the following, the 
+\emph{height} and \emph{depth} of a node $v$ in $T$ 
+will refer to the corresponding
+height and depth in the (uncompressed) trie $T'$.
+This convention will make the description of the operations more
+convenient.
+
+Let $u$ be a node in the compressed trie $T$,
+and suppose that $v$ is the parent of $u$ in
+$T$. Then, the extent $e_u$ of $u$ has the
+form $e_u = e_vbc_u$, where $e_v \in \{0, 1\}^*$
+is the extent of $v$, $b \in \{0,1\}$ is a bit that
+indicates whether $u$ is the left or the right child
+of $v$, and $c_u \in \{0, 1\}^*$ is called the \emph{compressed
+path} of $u$. Both $e_v$ and $c_u$ may be empty, but $e_v$
+can be empty only if $v$ is the root of $T$. 
+We call $n_u = e_vb$ the \emph{name} of $u$.
+If $u$ is the root, then $e_u$ may be empty, and we set
+the compressed path $c_u = e_u$. Also, we set $n_u = \eps$.
+The \emph{skip interval} if $u$ is $[1, |e_u|]$ if $u$ is the
+root, and $[|n_u|, |e_u|]$, otherwise.
+
+\begin{figure}[t]
 \centering
 \includegraphics[scale=.80]{zpred-1.mps}\qquad\raisebox{2cm}{\small
 $T$~\begin{tabular}{c}
@@ -333,45 +385,39 @@ $T$~\begin{tabular}{c}
 \end{tabular}}\qquad
 \end{tabular}
 }
-\caption{\label{fig:ztrie}(above) A compacted trie, the related names, and the
-function $T$ of the associated z-fast trie. The skip interval for $\alpha$ is
-$[7\..13]$. Dashed lines show the end of the handles of internal nodes.}
+\caption{\label{fig:ztrie}(above) A compacted trie, the 
+related names, and the function $T$ of the associated 
+z-fast trie. The skip interval for $\alpha$ is $[7\..13]$. 
+Dashed lines show the end of the handles of internal nodes.}
 \end{figure}
-Given a node $\alpha$ of the trie (see Figure~\ref{fig:ztrie}):
-\begin{itemize}
-	\item the \emph{extent} of $\alpha$, denoted by $e_\alpha$, is the longest
-	common prefix of the strings represented by the external nodes 
-	that are descendants of $\alpha$ (extents of internal nodes are called
-	\emph{internal extents});
-	\item the \emph{compacted path} of $\alpha$, denoted by $c_\alpha$, is the
-	string labelling $\alpha$;
- 	\item the \emph{name} of $\alpha$ is the extent of $\alpha$
- 	deprived of its suffix $c_\alpha$.
-	\item the \emph{skip interval} of $\alpha$ is $[1\..|e_\alpha|]$ for the root, and $[|n_\alpha|\..|e_\alpha|]$
-	for all other nodes.
-\end{itemize}
 
-Given a string $x$, we let $\exit x$ be the exit node of $x$, that is, the
-only node $\alpha$ such that $n_\alpha$ is a prefix of $x$ and
-either $e_\alpha=x$ or $e_\alpha$ is not a prefix of $x$.
-We recall a key definition from~\cite{BelazzouguiBoPaVi09}:
+Given a string $q \in \{0, 1\}^*$, the 
+\emph{exit node} of $q$, $\exit(q)$, is the unique node
+$u$ in $T$ such that $n_u$ is a prefix of $q$ either
+$e_u = q$ or $e_u$ is not a prefix of $q$.
+We recall some key definitions from~\cite{BelazzouguiBoPaVi09}:
 
 \begin{definition}[2-fattest numbers and handles] 
 \label{def:twofattest}
-The \emph{2-fattest number} of an interval
-$(a\..b)$ of positive integers is the unique integer in $(a\..b)$ that is
-divisible by the largest power of two, or equivalently, that has the largest
-number of trailing zeroes in its binary representation. The \emph{handle}
-$h_\alpha$ of a node $\alpha$ is the prefix of $e_\alpha$ whose length is 2-fattest number in the skip interval of $\alpha$
-(see Figure~\ref{fig:ztrie}). If the skip interval is empty (which can only
-happen at the root) we define the handle to be the empty string.
+Let $a, b \in \N$, $a \leq b$.
+The \emph{2-fattest number} of the interval
+$(a\..b)$ is the unique integer in $(a\..b)$ that is
+divisible by the largest power of two, or equivalently, 
+the integer with the largest number of trailing zeroes in its 
+binary representation. The \emph{handle}
+$h_u$ of a node $u$ in a compressed trie is the prefix of 
+$e_u$ whose length is 2-fattest number in the skip interval of $u$
+(see Figure~\ref{fig:ztrie}). If the skip interval of $u$ is empty 
+(which can only happen at the root) we define $h_u = \eps$.
 \end{definition}
-We remark that if $f$ is 2-fattest in $(a\..b)$, it is also 2-fattest in every
-subinterval of $(a\..b)$ that still contains $f$.
+
+We remark that if $c$ is the 2-fattest number of $(a\..b)$, it is also 
+the 2-fattest number in every subinterval of $(a\..b)$ that still 
+contains $c$.
 
 \begin{definition}[z-fast trie]
-Given a prefix-free set $S\subseteq 2^*$, the \emph{z-fast trie on $S$} is 
-a function $T$ mapping $h_\alpha \mapsto e_\alpha$, for each internal node
+For $S\subseteq \{0, 1\}^w$, the \emph{z-fast trie on $S$} is 
+a partial function $T$ mapping $h_u \mapsto e_u$, for each internal node
 $\alpha$ of the compacted trie associated with $S$, and any other string to an
 arbitrary internal extent.
 \end{definition}
