@@ -327,13 +327,13 @@ follows: we interpret the elements from $S$ as bitstrings
 of length $w$ (the most significant bit being in the leftmost
 position). The \emph{trie} $T'$ for $S$ is a binary tree
 of height $w$. Each node $v \in T'$ corresponds
-to a bitstring $e_v \in \{0,1\}^*$. The root $r$ has
-$e_r = \eps$. For each inner node $v$, the left
+to a bitstring $e_v \in \{0,1\}^*$, called the \emph{extent} of $v$. 
+The root $r$ has extent $e_r = \eps$. For each inner node $v$, the left
 child $u$ of $v$  has $e_u = e_v0$, and the
 right child $w$ of $v$ has $e_w = e_v1$ (one of the
-two children may not exist). The bitstrings of the 
+two children may not exist). The extents of the 
 leaves correspond to the elements of $S$, and
-the bitstrings of the inner nodes are prefixes
+the extents of the inner nodes are prefixes
 for the elements in $S$, see Figure~\ref{fig:trie}.
 
 \begin{figure}
@@ -349,6 +349,8 @@ for the elements in $S$, see Figure~\ref{fig:trie}.
 The \emph{compressed trie} $T$ for $S$ is obtained
 from $T'$ by contracting each maximal path of nodes
 with only one child into a single edge. 
+The extents of the nodes in $T$ are given by the longest 
+extents along the compressed paths.
 Each inner node in $T$ has exactly two children, and
 consequently $T$ has $O(n)$ nodes.
 In particular, the root of $T$ is the highest node of $T'$
@@ -360,19 +362,19 @@ height and depth in the (uncompressed) trie $T'$.
 This convention will make the description of the operations more
 convenient.
 
-Let $u$ be a node in the compressed trie $T$,
-and suppose that $v$ is the parent of $u$ in
-$T$. Then, the extent $e_u$ of $u$ has the
-form $e_u = e_vbc_u$, where $e_v \in \{0, 1\}^*$
-is the extent of $v$, $b \in \{0,1\}$ is a bit that
-indicates whether $u$ is the left or the right child
-of $v$, and $c_u \in \{0, 1\}^*$ is called the \emph{compressed
-path} of $u$. Both $e_v$ and $c_u$ may be empty, but $e_v$
-can be empty only if $v$ is the root of $T$. 
-We call $n_u = e_vb$ the \emph{name} of $u$.
-If $u$ is the root, then $e_u$ may be empty, and we set
-the compressed path $c_u = e_u$. Also, we set $n_u = \eps$.
-The \emph{skip interval} if $u$ is $[1, |e_u|]$ if $u$ is the
+Let $v$ be a node in the compressed trie $T$,
+and suppose that $u$ is the parent of $v$ in
+$T$. Then, the extent $e_v$ of $v$ has the
+form $e_v = e_ubc_v$, where $e_u \in \{0, 1\}^*$
+is the extent of $u$, $b \in \{0,1\}$ is a bit that
+indicates whether $v$ is the left or the right child
+of $u$, and $c_v \in \{0, 1\}^*$ is called the \emph{compressed
+path} of $v$. Both $e_u$ and $c_v$ may be empty, but $e_u$
+can be empty only if $u$ is the root of $T$. 
+We call $n_v = e_ub$ the \emph{name} of $u$.
+For the root $r$, the extent $e_r$ may be empty, and we set
+the compressed path $c_r = e_r$. Also, we set $n_r = \eps$.
+The \emph{skip interval} of $u$ is $[1, |e_u|]$ if $u$ is the
 root, and $[|n_u|, |e_u|]$, otherwise.
 
 \begin{figure}[t]
@@ -391,85 +393,84 @@ z-fast trie. The skip interval for $\alpha$ is $[7\..13]$.
 Dashed lines show the end of the handles of internal nodes.}
 \end{figure}
 
-Given a string $q \in \{0, 1\}^*$, the 
+Given a string $q \in \{0, 1\}^*$, with $|q| \leq w$, the 
 \emph{exit node} of $q$, $\exit(q)$, is the unique node
-$u$ in $T$ such that $n_u$ is a prefix of $q$ either
-$e_u = q$ or $e_u$ is not a prefix of $q$.
+$v$ in $T$ such that $n_v$ is a prefix of $q$ either
+$e_v = q$ or $e_v$ is not a prefix of $q$.
 We recall some key definitions from~\cite{BelazzouguiBoPaVi09}:
 
 \begin{definition}[2-fattest numbers and handles] 
 \label{def:twofattest}
 Let $a, b \in \N$, $a \leq b$.
 The \emph{2-fattest number} of the interval
-$(a\..b)$ is the unique integer in $(a\..b)$ that is
+$[a, b]$ is the unique integer in $[a, b]$ that is
 divisible by the largest power of two, or equivalently, 
 the integer with the largest number of trailing zeroes in its 
 binary representation. The \emph{handle}
-$h_u$ of a node $u$ in a compressed trie is the prefix of 
-$e_u$ whose length is 2-fattest number in the skip interval of $u$
-(see Figure~\ref{fig:ztrie}). If the skip interval of $u$ is empty 
-(which can only happen at the root) we define $h_u = \eps$.
+$h_v$ of a node $v$ in a compressed trie is the prefix of 
+$e_v$ whose length is the 2-fattest number of the skip interval of $v$
+(see Figure~\ref{fig:ztrie}). If the skip interval of $v$ is empty 
+(which can only happen at the root) we define $h_v = \eps$.
 \end{definition}
 
-We remark that if $c$ is the 2-fattest number of $(a\..b)$, it is also 
-the 2-fattest number in every subinterval of $(a\..b)$ that still 
+We remark that if $c$ is the 2-fattest number of $[a, b]$, it is also 
+the 2-fattest number in every subinterval of $[a, b]$ that still 
 contains $c$.
 
 \begin{definition}[z-fast trie]
-For $S\subseteq \{0, 1\}^w$, the \emph{z-fast trie on $S$} is 
-a partial function $T$ mapping $h_u \mapsto e_u$, for each internal node
-$\alpha$ of the compacted trie associated with $S$, and any other string to an
+Let $S \subseteq \{0, 1\}^w$ be given, and let $T$ be the 
+compressed trie for $S$. The \emph{z-fast trie on $S$} is 
+the partial function $Z$ mapping $h_v \mapsto e_v$, for each 
+internal node $v$ of $T$, and any other string to an
 arbitrary internal extent.
 \end{definition}
 
-The most important property of $T$ is that it makes us able to find very quickly
-the name of the exit node of a string $x$ using 
-a fat binary search (Algorithm~\ref{algo:query}). The basic idea is that of locating the
-longest internal extent $e$ that is a proper prefix of $x$:
-the name of $\exit x$ is then $x[0\..|e|+1)$. The algorithm
-narrows down an initial search interval by splitting it on its 2-fattest number (rather than on its midpoint).
-The version reported here (which builds upon~\cite{BelazzouguiBoVi10}) has two main features:
-very weak requirements on $T$, and the possibility of starting the search on a small interval. The
-latter feature will be the key in obtaining our main results.
+The z-fast trie $Z$ enables us to determine very quickly
+the name of the exit node of a query string $q \in \{0,1\}^+$ using 
+\emph{fat} binary search (Algorithm~\ref{algo:query}). The basic 
+idea is to locate the longest internal extent $e$ that is a proper 
+prefix of $q$: the name of $\exit(q)$ is then $q[0, |e| + 1]$. 
+The algorithm narrows down an initial search interval by splitting 
+it on its 2-fattest number (rather than on its midpoint).
+The fat binary search reported here (which builds 
+upon~\cite{BelazzouguiBoVi10}) has two main features:
+it imposes very weak requirements on $Z$, and it allows us to start 
+the search on a small interval. The latter feature will be the key 
+in obtaining our main results.
 
-\iffalse
 \begin{algorithm}
-\smallskip\textbf{Input:} a nonempty string $x\in2^*$, an integer $0\leq
-a<|x|$ such that $a=0$ or $x[0\..a)$ is an internal extent of the compacted trie on $S$, and
-an integer $b\leq|x|$ larger than the length of the longest internal extent of the
-compacted trie on $S$ that is a proper prefix of $x$.
-
-\textbf{Output:} the name of $\exit{x}$	
-\vspace{-1.5em}
-\begin{tabbing}
-\setcounter{prgline}{0}
-\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
-\pl\WHILE $b-a>1$ \DO
-\pl\>$f\leftarrow $ the 2-fattest number in $(a\..b)$
-\pl\>$e\leftarrow T(x[0\..f))$
-\pl\>\IF $f\leq|e|\land e\prec x$ \THEN $a\leftarrow |e|$ \COMMENT{Move from $(a\..b)$ to $(|e|\..b)$}
-\pl\>\ELSE $b\leftarrow f$ \COMMENT{Move from $(a\..b)$ to $(a\..f)$}
-\pl\OD
-\pl\IF $a=0\land e_\text{root}\neq\epsilon$ \RETURN $\epsilon$
-\pl\ELSE \RETURN $x[0\..a+1)$
-\end{tabbing}
-\caption{\label{algo:query}Fat binary search on the z-fast trie: at the end of the
-execution we return the name of $\exit x$.}
+\KwIn{a string $q \in \{0,1\}^+$, an integer $a \in [0, |q| - 1]$
+such that $a = 0$ or $q[0, a]$ is an internal extent of $T$, and
+an integer $b \in [a, |q|]$ larger than the length of the longest 
+internal extent of $T$ that is a proper prefix of $q$}
+\KwOut{the name of $\exit(q)$}
+\While{$b - a > 1$}{%
+$c \gets $ the 2-fattest number in $[a,b]$\;
+$e \gets Z(q[0, c])$\;
+\If{$c \leq |e| \wedge e \prec q$}{%
+  $a\gets |e|$
+\tcp*{Move from $[a, b]$ to $[|e|,b]$}}
+\Else{$b \gets c$ \tcp*{Move from $[a, b]$ to $[a, c]$}
+}
+}
+\If{$a = 0 \wedge e_\text{root}\neq\eps$}{% 
+  \Return $\eps$\;
+} \Else{%
+  \Return $q[0, a + 1]$\;
+}
+\caption{Fat binary search in order to 
+  determine the name of $\exit(q)$.}
+\label{algo:query}
 \end{algorithm}
-\fi
-
-%We will use the following property of 2-fattest numbers, proved
-% in~\cite{BelazzouguiBoPaVi09}:
 
 \begin{lemma}\label{lem:correctness}
-Let $p_0=\epsilon$ and $p_1$,~$p_2$,
-$\dots\,$,~$p_t$ be the internal extents of the compacted
-trie that are \emph{proper} prefixes of $x$, ordered by increasing length. 
-Let $(a\..b)$ be the interval maintained by 
-Algorithm~\ref{algo:query}. Before and after each iteration the following invariants 
-are satisfied: 
+Let $p_0 = \eps$ and $p_1, p_2, \dots ,p_t$ be the internal 
+extents of $T$ that are \emph{proper} prefixes of $q$, ordered by 
+increasing length.  Let $[a, b]$ be the interval maintained by 
+Algorithm~\ref{algo:query}. Before and after each iteration, the 
+following invariants are satisfied: 
 \begin{enumerate}
-    \item\label{enu:lema} $a=|p_j|$ for some $j$;
+    \item\label{enu:lema} $a = |p_j|$, for some $j$;
     \item\label{enu:lemb} $|p_t|< b$.
 \end{enumerate}
 Thus, at the end of the loop, $a=|p_t|$.
