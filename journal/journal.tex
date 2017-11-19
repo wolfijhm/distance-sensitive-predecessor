@@ -240,12 +240,12 @@ suitable conditions, confirming the intuition that fat
 binary search can be used as a very versatile building block 
 for data structures.
 
-\section{Notation and tools}
+\section{Notation and Tools}
 \label{sec:notation}
 
 \paragraph{Basic Notations.}
-We will use binary logarithms throughout, and we set 
-$\log x := 1$ for $x \leq 2$.
+We use $\log x$ to denote the binary logarithm, and we set 
+$\log x := 1$, for $x \leq 2$.
 We write $\eps$ for the empty string. For $k \in \N$, we denote by 
 $\{0, 1\}^k$ the set of all binary strings of length $k$, by 
 $\{0,1\}^* = \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
@@ -265,7 +265,7 @@ order. We use the convention that $0^k - 1 = 1^k + 1 = \bot$, for
 $k \in \N$, since then the predecessor and the successor do 
 not exist. 
 
-\paragraph{The word RAM.}
+\paragraph{The Word RAM.}
 Let $w \in \N$ be a power of two. We work in the standard word RAM 
 model with word-length $w$. We assume that our word RAM can multiply
 two $w$-bit words in constant time, and we adopt the full 
@@ -284,7 +284,7 @@ lexicographic order, and for $q \in \{0, 1\}^w$, we set
      q^+ &= \min \{r \in S \mid r \geq q\?\} && 
        \text{(the \emph{successor} of $q$ in $S$)}.
 \end{align*}
-If the maximum or minimum does not exists, we set $q^- = ¸\bot$ or 
+If the maximum or minimum does not exist, we set $q^- = \bot$ or 
 $q^+ = \bot$.  A \emph{predecessor} or \emph{successor query} is
 given by a string $q \in \{0, 1\}^w$, and the answer is $q^-$ or 
 $q^+$. In fact, we shall focus exclusively on predecessor queries, 
@@ -318,7 +318,7 @@ high probability.\qed
 \wolfgang{Cite a specific theorem for this, similar to 
   Theorem~\ref{thm:succinct_retrieval_only_hashtable}?}
 We assume to be able to store a constant-time $r$-bit function on 
-$n$ keys using $rn+cn +o(n)$ bits for some constant $c\geq 0$: the 
+$n$ keys using $rn+cn +o(n)$ bits, for some constant $c\geq 0$: the 
 function may return arbitrary values outside of its domain (for 
 practical implementations see~\cite{BelazzouguiBoPaVi11}).
 
@@ -351,11 +351,11 @@ inner nodes are prefixes for the elements in $S$, see Figure~\ref{fig:trie}.
 The \emph{compressed trie} $T$ for $S$ is obtained
 from $T'$ by contracting each maximal path of nodes
 with only one child into a single edge. 
-The extents of the nodes in $T$ are given by the longest 
-extents along the corresponding compressed paths. In particular, 
-the root of $T$ is corresponds to the highest node of $T'$ that has 
+The root of $T$ is corresponds to the highest node of $T'$ that has 
 two children.  Each inner node in $T$ has exactly two children. 
 Consequently, $T$ has $O(n)$ nodes. 
+The extents of the nodes in $T$ are given by the longest 
+extents along the corresponding compressed paths.
 %Maybe somewhat unusually, in the following, the 
 %\emph{height} and \emph{depth} of a node $v$ in $T$ 
 %will refer to the corresponding
@@ -374,8 +374,14 @@ can be empty only if $u$ is the root of $T$.
 We call $n_v = e_ub$ the \emph{name} of $u$.
 For the root $v$, the extent $e_v$ may be empty, and we set
 the compressed path $c_v = e_v$. Also, we set $n_v = \eps$.
+We call an extent $e_v$ \emph{internal}, if $v$ is an internal
+node of $T$.
 For any node $v$ in $T$, the \emph{skip interval} of $v$ is 
-$[1, |e_v|]$ if $v$ is the root, and $[|n_v|, |e_v|]$, otherwise.
+$[1, |e_v|]$, if $v$ is the root, and $[|n_v|, |e_v|]$, otherwise.
+Given a string $q \in \{0, 1\}^*$, with $|q| \leq w$, the 
+\emph{exit node} of $q$, $\exit(q)$, is the unique node
+$v$ in $T$ such that $n_v$ is a prefix of $q$ and either
+$e_v = q$ or $e_v$ is not a prefix of $q$.
 Figure~\ref{fig:ztrie} illustrates these definitions.
 
 \begin{figure}[t]
@@ -388,52 +394,51 @@ $T$~\begin{tabular}{c}
 \end{tabular}}\qquad
 \end{tabular}
 }
-\caption{(above) A compacted trie, the 
+\caption{(above) A compressed trie, the 
 related names, and the function $T$ of the associated 
 z-fast trie. The skip interval for $\alpha$ is $[7\..13]$. 
 Dashed lines show the end of the handles of internal nodes.}
 \label{fig:ztrie}
 \end{figure}
 
-Given a string $q \in \{0, 1\}^*$, with $|q| \leq w$, the 
-\emph{exit node} of $q$, $\exit(q)$, is the unique node
-$v$ in $T$ such that $n_v$ is a prefix of $q$ either
-$e_v = q$ or $e_v$ is not a prefix of $q$.
+\paragraph{Z-fast Tries and Fat Binary Search.}
 We recall some key definitions from~\cite{BelazzouguiBoPaVi09}:
 
 \begin{definition}[2-fattest numbers and handles] 
 \label{def:twofattest}
-Let $a, b \in \N$, $a \leq b$.
-The \emph{2-fattest number} of the interval
-$[a, b]$ is the unique integer in $[a, b]$ that is
-divisible by the largest power of two, or equivalently, 
-the integer with the largest number of trailing zeroes in its 
-binary representation. The \emph{handle}
-$h_v$ of a node $v$ in a compressed trie is the prefix of 
-$e_v$ whose length is the 2-fattest number of the skip interval of $v$
-(see Figure~\ref{fig:ztrie}). If the skip interval of $v$ is empty 
-(which can only happen at the root) we define $h_v = \eps$.
+Let $a, b \in \N$, $a \leq b$. The \emph{2-fattest number} 
+of the interval $[a, b]$ is the unique integer in $[a, b]$ 
+that is divisible by the largest power of two. Equivalently, 
+it is the integer with the largest number of trailing zeroes 
+in its binary representation. The \emph{handle} $h_v$ of a 
+node $v$ in a compressed trie is the prefix of $e_v$ whose 
+length is the 2-fattest number of the skip interval of $v$
+(see Figure~\ref{fig:ztrie}). If the skip interval of $v$ 
+is empty (which can happen only at the root), we set 
+$h_v = \eps$.
 \end{definition}
 
-We remark that if $c$ is the 2-fattest number of $[a, b]$, it is also 
-the 2-fattest number in every subinterval of $[a, b]$ that still 
-contains $c$.
+We remark that if $c$ is the 2-fattest number of $[a, b]$, it 
+is also the 2-fattest number in every subinterval of $[a, b]$ 
+that contains it.
 
 \begin{definition}[z-fast trie]
 Let $S \subseteq \{0, 1\}^w$ be given, and let $T$ be the 
 compressed trie for $S$. The \emph{z-fast trie on $S$} is 
-the partial function $Z$ mapping $h_v \mapsto e_v$, for each 
-internal node $v$ of $T$, and any other string to an
-arbitrary internal extent.
+the function $Z : \{0, 1\}^* \rightarrow \{0, 1\}^*$ which 
+has $Z(h_v) = e_v$, for each internal node $v$ of $T$, and 
+which maps any other string to an arbitrary internal extent
+of $T$.
 \end{definition}
 
-The z-fast trie $Z$ enables us to determine very quickly
-the name of the exit node of a query string $q \in \{0,1\}^+$ using 
-\emph{fat} binary search (Algorithm~\ref{algo:query}). The basic 
-idea is to locate the longest internal extent $e$ that is a proper 
-prefix of $q$: the name of $\exit(q)$ is then $q[0, |e| + 1]$. 
-The algorithm narrows down an initial search interval by splitting 
-it on its 2-fattest number (rather than on its midpoint).
+Given the z-fast trie $Z$, we can determine very quickly
+the name of the exit node for any query string $q \in \{0,1\}^+$.
+For this, we use \emph{fat} binary search, see Algorithm~\ref{algo:query}. 
+The algorithm locates the longest internal extent $e$ that is a 
+proper prefix of $q$. For $e$, the name of $\exit(q)$ is obtained as
+$q[0, |e| + 1]$. Given an initial search interval $[a,b]$, the 
+algorithm repeatedly splits it on its 2-fattest number 
+(rather than on its midpoint).
 The fat binary search reported here (which builds 
 upon~\cite{BelazzouguiBoVi10}) has two main features:
 it imposes very weak requirements on $Z$, and it allows us to start 
@@ -441,24 +446,29 @@ the search on a small interval. The latter feature will be the key
 in obtaining our main results.
 
 \begin{algorithm}
-\KwIn{a string $q \in \{0,1\}^+$, an integer $a \in [0, |q| - 1]$
-such that $a = 0$ or $q[0, a]$ is an internal extent of $T$, and
+\KwIn{a string $q \in \{0,1\}^+$, an integer $a \in [0, |q|]$
+such that $a = 0$ or $q[0, a - 1]$ is an internal extent of $T$, and
 an integer $b \in [a, |q|]$ larger than the length of the longest 
 internal extent of $T$ that is a proper prefix of $q$}
 \KwOut{the name of $\exit(q)$}
 \While{$b - a > 1$}{%
-$c \gets $ the 2-fattest number in $[a,b]$\;
-$e \gets Z(q[0, c])$\;
+$c \gets $ the 2-fattest number in $[a + 1, b - 1]$\;
+$e \gets Z(q[0, c - 1])$\;
 \If{$c \leq |e| \wedge e \prec q$}{%
-  $a\gets |e|$
-\tcp*{Move from $[a, b]$ to $[|e|,b]$}}
-\Else{$b \gets c$ \tcp*{Move from $[a, b]$ to $[a, c]$}
+  \tcp{Move from $[a, b]$ to $[|e|,b]$}
+ $a\gets |e|$\;
+\label{alg1:reass1} 
+}
+\Else{
+\tcp{Move from $[a, b]$ to $[a, c]$}
+$b \gets c$\;
+\label{alg1:reass2} 
 }
 }
 \If{$a = 0 \wedge e_\text{root}\neq\eps$}{% 
   \Return $\eps$\;
 } \Else{%
-  \Return $q[0, a + 1]$\;
+  \Return $q[0, a]$\;
 }
 \caption{Fat binary search in order to 
   determine the name of $\exit(q)$.}
@@ -466,7 +476,7 @@ $e \gets Z(q[0, c])$\;
 \end{algorithm}
 
 \begin{lemma}\label{lem:correctness}
-Let $p_0 = \eps$ and $p_1, p_2, \dots ,p_t$ be the internal 
+Let $e_0 = \eps$ and $e_1, e_2, \dots, e_t$ be the internal 
 extents of $T$ that are \emph{proper} prefixes of $q$, ordered by 
 increasing length.  Let $[a, b]$ be the interval maintained by 
 Algorithm~\ref{algo:query}. Before and after each iteration, the 
@@ -475,54 +485,71 @@ following invariants are satisfied:
     \item\label{enu:lema} $a = |p_j|$, for some $j$;
     \item\label{enu:lemb} $|p_t|< b$.
 \end{enumerate}
-Thus, at the end of the loop, $a=|p_t|$.
+Thus, at the end of the loop, $a = |p_t|$.
 \end{lemma}
+
 \begin{proof}
-\noindent(\ref{enu:lema})
-The fact that $a=|p_j|$ for some $j$ is true at the beginning, and when
-$a$ is reassigned (say, $a \leftarrow |e|$) it remains true: indeed, since $e$
-is an internal extent, $a<f\leq |e|$ and $e\prec x$, $e=p_k$ for some $k>j$.
+We begin with invariant (\ref{enu:lema}).
+By assumption, the condition $a = |p_j|$, for some $j$, holds
+initially. The condition is maintained whenever
+$a$ is assigned a new value in line~\ref{alg1:reass1}. 
+Indeed, suppose that currently $a = |e_j|$, for some $j$, and
+that line~\ref{alg1:reass1} is reached. Then, since $e$ is an 
+internal extent, since $|e_j| = a  < c  \leq |e|$, 
+and since $e \prec q$, it follows that $e = e_k$, for some $k > j$.
 
-\noindent(\ref{enu:lemb})
-By (\ref{enu:lema}), $a$ is always the length of some $p_j$,
-so $b>|p_t|$ at the beginning, and then it can only decrease; thus,
-$(a\..b)$ contains the concatenation of some contiguous skip intervals of the
-proper ancestors of $\exit x$ up to the skip interval of $\exit x$ (which may
-or may not be partially included itself).
-
-Now, assume by contradiction that when we update $b$ there is a node $\alpha$
-with extent $e_\alpha$ which is a proper
-prefix of $x$ of length $f$ or greater. Since $f$ is 2-fattest in $(a\..b)$, it
-would be 2-fattest in the skip interval of $\alpha$ (as the latter is contained
-in $(a\..b)$), so $x[0\..f)$ would be the handle of $\alpha$, and $T$ would have
-returned $e_\alpha$, which satisfies $f\leq |e_\alpha|$ and $e_\alpha\prec x$, contradicting the fact that we are
-updating $b$. We conclude that the invariant $|p_t|<b$ is preserved.
+Next, we prove invariant (\ref{enu:lemb}).
+By assumption, the condition $b > |e_t|$ holds initially.
+To show that the invariant is preserved,
+suppose that at the beginning of an iteration of the
+\textbf{while}-loop, we have $b > |e_t|$.
+By invariant (\ref{enu:lema}), $a = |e_j|$, for some $j$.  
+Let $v_{j+1}, \dots, v_{t}$ be the inner nodes in $T$ 
+with $e_{v_k} = e_k$, for $k = j + 1, \dots, t$.
+Then, the skip intervals of $v_{j+1}, \dots, v_t$ are 
+pairwise disjoint, and their union is $[a + 1, |e_t|]$.
+If $c \leq |e_t|$, then $c$ lies in the
+skip interval of some $v_k$.
+Since $c$ is 2-fattest in $[a + 1, b - 1]$, 
+it is also 2-fattest in the skip interval of $v_k$. 
+Hence, we have $q[0, c - 1] = h_{v_k}$ and 
+$Z(q[0, c - 1]) = e_k$, 
+which satisfies $c \leq |e_k|$ and $e_k  \prec q$. 
+Thus, line~\ref{alg1:reass2} is executed only if $c > |e_t|$.
+The invariant $|e_t| < b$ is preserved.
 \end{proof}
 
 \begin{theorem}
 \label{thm:correctnessfbs}
-Algorithm~\ref{algo:query} completes in at most $\lceil\log(b-a)\rceil$
-iterations, returning the name of $\exit x$.
+Algorithm~\ref{algo:query} takes at most $\lceil\log(b-a)\rceil$
+iterations
+and returns the name of $\exit(q)$.
 \end{theorem}
-\begin{proof}
-We first prove the bound on the number of iterations. Note that given an
-interval $(\ell\..r)$ in which there is at most one multiple of $2^i$, the two
-subintervals $(\ell\..f)$ and $(f\..r)$, where $f$ is the 2-fattest number in
-$(\ell\..r)$, contain both at most one multiple of $2^{i-1}$ (if one of the
-intervals contained two such multiples, there would be a multiple of $2^i$
-inbetween, contradicting our assumption); this observation is \emph{a fortiori}
-true if we further shorten the intervals. Thus, we cannot
-split on a 2-fattest number more than $i$ times, because at that point the
-condition implies that the interval has length at most one. But clearly an interval of length $t$ contains at most one multiple of $2^{\lceil\log t\rceil}$, which shows that the algorithm
-iterates no more than $\lceil\log(b-a)\rceil$ times.
 
-Finally, if $t>0$ then $x[0\..|p_t|+1)$ is the name of $\exit x$.
-Otherwise, $\exit x$ is the root (hence the special case in Algorithm~1).
+\begin{proof}
+We first bound the number of iterations. Let 
+$[\ell, r]$ be an interval that contains at most one multiple of 
+$2^i$, and let $c$ be the 2-fattest number in $[\ell, r]$. Then, 
+the two subintervals $[\ell, c - 1]$ and $[c + 1, r]$ each contain at most 
+one multiple of $2^{i-1}$ (if one interval contained two such 
+multiples, it would also contain a multiple of $2^i$
+in the interior, contradicting our assumption).
+By induction, it follows that after splitting
+at most $i$ times, the resulting interval has length at most one. 
+Now, since an interval of length $k$ contains at most one multiple of 
+$2^{\lceil\log k\rceil}$, the algorithm
+has at most $\lceil\log(b-a)\rceil$ iterations.
+
+Finally, if $t > 0$ then $q[0, |p_t|]$ is the name of $\exit(q)$.
+Otherwise, $\exit{q}$ is the root (hence the special case in 
+Algorithm~~\ref{algo:query}).
 \end{proof}
 
-Note that finding the 2-fattest number in an interval requires the computation of
-the most significant bit\footnote{More precisely, the 2-fattest number in
-$(\ell\..r]$ is $-1 \ll \operatorname{msb}(\ell \oplus r) \mathbin\& r$.}, but
+To find the 2-fattest number in an interval, we must need 
+a most significant bit operation.\footnote{More precisely, the 
+2-fattest number in
+$[\ell + 1, r - 1]$ is 
+$-1 \ll \operatorname{msb}(\ell \oplus r) \mathbin\& r$.}, but
 alternatively starting from the interval $(\ell\..r]$
 one can set $i=\lceil\log(r-\ell)\rceil$ (this can be computed trivially in time $O(\log(r-\ell))$)
 and then check, for decreasing $i$, whether $(-1\ll i)\mathbin\& \ell \neq (-1\ll i)\mathbin\&
@@ -609,7 +636,7 @@ of $S$, so in the last step we certainly return $\bot$.
 % Observe that actually $\hat f$ will return the length of the name of the exit
 % node for all prefixes in a set $\hat P$ that satisfies $P\subseteq \hat P\subseteq\Pref S$.
 
-\section{Locally sensitive predecessor search}
+\section{Locally Sensitive Predecessor Search}
 \label{sec:pred}
 
 Our purpose is now to combine Theorem~\ref{th:zfast} and~\ref{th:pref} to answer
