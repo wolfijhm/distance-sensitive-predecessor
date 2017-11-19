@@ -243,59 +243,62 @@ for data structures.
 \section{Notation and tools}
 \label{sec:notation}
 
-%We use von Neumann's definition and notation for natural numbers, 
-%i.e., we identify $n=\{\?0, 1, \dots, n-1\?\}$, so
-%$2=\{\?0,1\?\}$ and $2^*$ is the set of all binary strings.
-For $k \in \N$, we denote by $\{0, 1\}^k$ the set of all binary 
-strings of length $k$, and by 
-$\{0,1\}^* = \bigcup_{k = 0}^{\infty} \{0, 1\}^k$ the set of all
-finite binary strings. The length of $x \in \{0, 1\}^*$ 
-is denoted by $|x|$.
-For a string $x \in \{0, 1\}^*$ and $a, b \in \N$ with $a \leq b$, 
-we write $x[a \.. b]$ for the substring of $x$ starting at position
-$a$ (inclusive) and ending at position $b$ (exclusive). 
-The indices start from $0$. We abbreviate $x[a \.. a]$ as $x[a]$.
-The symbol $\preceq$ denotes prefix order, and $\prec$ is its 
-strict version.\wolfgang{Define prefix order?} Given a string 
-$x \in \{0,1\}$, we denote with $x + 1$ and $x - 1$ the strings in 
-$\{0, 1\}^{|x|}$ that come before and after $x$ in lexicographic 
+\paragraph{Basic Notations.}
+We will use binary logarithms throughout, and we set 
+$\log x := 1$ for $x \leq 2$.
+We write $\eps$ for the empty string. For $k \in \N$, we denote by 
+$\{0, 1\}^k$ the set of all binary strings of length $k$, by 
+$\{0,1\}^* = \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
+nonempty finite binary strings, and by 
+$\{0,1\}^+ = \{0, 1\}^+ \cup \{\eps\}$ the set of all finite binary 
+strings. The length of $q \in \{0, 1\}^*$ is denoted by $|q|$.
+For a string $q \in \{0, 1\}^*$ and $a, b \in \N$ with $a \leq b$, 
+we write $q[a, b]$ for the substring of $q$ starting at position
+$a$ and ending at position $b$.  The indices start from $0$. 
+We abbreviate $q[a, a]$ as $q[a]$. For two binary strings 
+$q, r \in \{0,1\}^*$, we write $q \preceq r$ to indicate that $q$ is 
+a prefix of $r$, and $q \prec r$ to indicate that $q$ is a proper 
+prefix of $r$. Given a string 
+$q \in \{0,1\}^+$, we denote with $q + 1$ and $q - 1$ the strings in 
+$\{0, 1\}^{|q|}$ that come before and after $q$ in lexicographic 
 order. We use the convention that $0^k - 1 = 1^k + 1 = \bot$, for 
-$k \in \N$, since in this case the predecessor and the successor do 
-not exist. We will use binary logarithms throughout, and we set 
-$\log x :=1$ for $x \leq 2$.
+$k \in \N$, since then the predecessor and the successor do 
+not exist. 
 
 \paragraph{The word RAM.}
 Let $w \in \N$ be a power of two. We work in the standard word RAM 
 model with word-length $w$. We assume that our word RAM can multiply
 two $w$-bit words in constant time, and we adopt the full 
 randomness assumption for hashing~\wolfgang{Reference?}. Note, 
-however, that these two assumptions  dependence on multiplication and full randomness is only due to the
-need to store functions succinctly; for the rest, our algorithms do not depend
-on them.
-\wolfgang{Cite a specific theorem for this, similar to Theorem 9.1}
+however, that these two assumptions are only needed for an 
+efficient implementation of our hash maps (see below);
+for the rest, our algorithms do not depend on them.
 
+\paragraph{Predecessor and Successor Queries.}
 Given a set $S \subseteq \{0, 1\}^w$ of $n$ binary strings of 
 length $w$, we consider $S$ to be ordered according to the 
-lexicographic order, and we set
+lexicographic order, and for $q \in \{0, 1\}^w$, we set
 \begin{align*}
-     x^- &= \max\{\?y \in S \mid y< x\?\} &&\text{(the \emph{predecessor} of
-     $x$ in $S$)}\\
-    x^+ &= \min\{\?y \in S \mid y\geq x\?\} && \text{(the \emph{successor} of
-    $x$ in $S$)},
+     q^- &= \max \{r \in S \mid r < q\} && 
+        \text{(the \emph{predecessor} of $q$ in $S$)} \\
+     q^+ &= \min \{r \in S \mid r \geq q\?\} && 
+       \text{(the \emph{successor} of $q$ in $S$)}.
 \end{align*}
-where $\leq$ is the lexicographic order. A \emph{predecessor/successor} query is
-given by a string $x$, and the answer is $x^\pm$. In this paper, for the sake
-of simplicity we shall actually concentrate on predecessor search only,
-also because our algorithms actually return the \emph{rank} of the predecessor
-in $S$, and thus are in principle more informative (e.g., the successor can be
-immediately computed adding one to the returned index).
+If the maximum or minimum does not exists, we set $q^- = ¸\bot$ or 
+$q^+ = \bot$.  A \emph{predecessor} or \emph{successor query} is
+given by a string $q \in \{0, 1\}^w$, and the answer is $q^-$ or 
+$q^+$. In fact, we shall focus exclusively on predecessor queries, 
+also because our algorithms actually return the \emph{rank} of the 
+predecessor in $S$, and thus are in principle more informative 
+(e.g., the successor can be immediately computed by incrementing 
+the resulting index).
 
 \paragraph{Hash Maps.}
-Our data structure also makes extensive use of
+Our data structure makes extensive use of
 hashing. In particular, we will maintain several
-succinct hashtables that store additional
+succinct hash tables that store additional
 information for supporting fast queries.
-For this, we will use a hashtable described
+For this, we will use a hash table described
 by Demaine~\etal~\cite{DemaineMePaPa06}.
 The following theorem summarizes the properties
 of their data structure.
@@ -311,10 +314,13 @@ worst-case, the bounds for the updates hold with
 high probability.\qed
 \end{theorem}
 
-We assume to be able to store a constant-time $r$-bit function on $n$ keys using
-$rn+cn +o(n)$ bits for some constant $c\geq 0$: the function may return
-arbitrary values outside of its domain (for practical implementations
-see~\cite{BelazzouguiBoPaVi11}).
+
+\wolfgang{Cite a specific theorem for this, similar to 
+  Theorem~\ref{thm:succinct_retrieval_only_hashtable}?}
+We assume to be able to store a constant-time $r$-bit function on 
+$n$ keys using $rn+cn +o(n)$ bits for some constant $c\geq 0$: the 
+function may return arbitrary values outside of its domain (for 
+practical implementations see~\cite{BelazzouguiBoPaVi11}).
 
 
 
@@ -323,18 +329,14 @@ see~\cite{BelazzouguiBoPaVi11}).
 \paragraph{Compressed Tries.}
 Our data structure is based on \emph{compressed
 tries}~\cite{CormenLeRiSt09,Knuth98}. These are defined as
-follows: we interpret the elements from $S$ as bitstrings 
-of length $w$ (the most significant bit being in the leftmost
-position). The \emph{trie} $T'$ for $S$ is a binary tree
-of height $w$. Each node $v \in T'$ corresponds
-to a bitstring $e_v \in \{0,1\}^*$, called the \emph{extent} of $v$. 
-The root $r$ has extent $e_r = \eps$. For each inner node $v$, the left
-child $u$ of $v$  has $e_u = e_v0$, and the
-right child $w$ of $v$ has $e_w = e_v1$ (one of the
-two children may not exist). The extents of the 
-leaves correspond to the elements of $S$, and
-the extents of the inner nodes are prefixes
-for the elements in $S$, see Figure~\ref{fig:trie}.
+follows: let $S \subseteq \{0, 1\}^w$. The \emph{trie} $T'$ for $S$ 
+is a binary tree of height $w$. Each node $v \in T'$ corresponds
+to a bit string $e_v \in \{0,1\}^*$, called the \emph{extent} of $v$. 
+The root has extent $\eps$. For each inner node $v$, the left child 
+$u$ of $v$  has $e_u = e_v0$, and the right child $w$ of $v$ has 
+$e_w = e_v1$ (one of the two children may not exist). The extents of
+the leaves correspond to the elements of $S$, and the extents of the 
+inner nodes are prefixes for the elements in $S$, see Figure~\ref{fig:trie}.
 
 \begin{figure}
   \centering
@@ -350,32 +352,31 @@ The \emph{compressed trie} $T$ for $S$ is obtained
 from $T'$ by contracting each maximal path of nodes
 with only one child into a single edge. 
 The extents of the nodes in $T$ are given by the longest 
-extents along the compressed paths.
-Each inner node in $T$ has exactly two children, and
-consequently $T$ has $O(n)$ nodes.
-In particular, the root of $T$ is the highest node of $T'$
-that has two children.
-Maybe somewhat unusually, in the following, the 
-\emph{height} and \emph{depth} of a node $v$ in $T$ 
-will refer to the corresponding
-height and depth in the (uncompressed) trie $T'$.
-This convention will make the description of the operations more
-convenient.
+extents along the corresponding compressed paths. In particular, 
+the root of $T$ is corresponds to the highest node of $T'$ that has 
+two children.  Each inner node in $T$ has exactly two children. 
+Consequently, $T$ has $O(n)$ nodes. 
+%Maybe somewhat unusually, in the following, the 
+%\emph{height} and \emph{depth} of a node $v$ in $T$ 
+%will refer to the corresponding
+%height and depth in the (uncompressed) trie $T'$.
+%This convention will make the description of the operations more
+%convenient.
 
-Let $v$ be a node in the compressed trie $T$,
-and suppose that $u$ is the parent of $v$ in
-$T$. Then, the extent $e_v$ of $v$ has the
-form $e_v = e_ubc_v$, where $e_u \in \{0, 1\}^*$
-is the extent of $u$, $b \in \{0,1\}$ is a bit that
-indicates whether $v$ is the left or the right child
+Let $v$ be a nonroot-node in the compressed trie $T$,
+and suppose that $u$ is the parent of $v$ in $T$. Then, 
+the extent $e_v$ of $v$ has the form $e_v = e_ubc_v$, 
+where $e_u \in \{0, 1\}^*$ is the extent of $u$, $b \in \{0,1\}$ is 
+a bit that indicates whether $v$ is the left or the right child
 of $u$, and $c_v \in \{0, 1\}^*$ is called the \emph{compressed
 path} of $v$. Both $e_u$ and $c_v$ may be empty, but $e_u$
 can be empty only if $u$ is the root of $T$. 
 We call $n_v = e_ub$ the \emph{name} of $u$.
-For the root $r$, the extent $e_r$ may be empty, and we set
-the compressed path $c_r = e_r$. Also, we set $n_r = \eps$.
-The \emph{skip interval} of $u$ is $[1, |e_u|]$ if $u$ is the
-root, and $[|n_u|, |e_u|]$, otherwise.
+For the root $v$, the extent $e_v$ may be empty, and we set
+the compressed path $c_v = e_v$. Also, we set $n_v = \eps$.
+For any node $v$ in $T$, the \emph{skip interval} of $v$ is 
+$[1, |e_v|]$ if $v$ is the root, and $[|n_v|, |e_v|]$, otherwise.
+Figure~\ref{fig:ztrie} illustrates these definitions.
 
 \begin{figure}[t]
 \centering
@@ -387,10 +388,11 @@ $T$~\begin{tabular}{c}
 \end{tabular}}\qquad
 \end{tabular}
 }
-\caption{\label{fig:ztrie}(above) A compacted trie, the 
+\caption{(above) A compacted trie, the 
 related names, and the function $T$ of the associated 
 z-fast trie. The skip interval for $\alpha$ is $[7\..13]$. 
 Dashed lines show the end of the handles of internal nodes.}
+\label{fig:ztrie}
 \end{figure}
 
 Given a string $q \in \{0, 1\}^*$, with $|q| \leq w$, the 
@@ -1066,16 +1068,6 @@ leaves correspond to the elements of $S$, and
 the bitstrings of the inner nodes are prefixes
 for the elements in $S$, see Figure~\ref{fig:trie}.
 
-\begin{figure}
-  \centering
-  \includegraphics{trie}
-  \caption{A trie (left) and a compressed trie (right) for the set 
-  000, 100, 110, 111. The longest common prefix of 101 is  10. The 
-  lca of 101 in the compressed trie
-    is the node labeled 1.}
-  \label{fig:trie}
-\end{figure}
-
 The \emph{compressed trie} $T$ for $S$ is obtained
 from $T'$ by contracting each maximal path of nodes
 with only one child into a single edge. 
@@ -1177,7 +1169,7 @@ by Demaine~\etal~\cite{DemaineMePaPa06}.
 The following theorem summarizes the properties
 of their data structure.
 
-\begin{theorem}\label{thm:succinct_retrieval_only_hashtable}
+\begin{theorem}
 For any $r \geq 1$, there exists a dynamic dictionary that
 stores entries with keys from $U$ and with associated
 values of $r$ bits each.
