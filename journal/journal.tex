@@ -541,17 +541,25 @@ $2^{\lceil\log k\rceil}$, the algorithm
 has at most $\lceil\log(b-a)\rceil$ iterations.
 
 Finally, if $t > 0$ then $q[0, |p_t|]$ is the name of $\exit(q)$.
-Otherwise, $\exit{q}$ is the root (hence the special case in 
-Algorithm~~\ref{algo:query}).
+Otherwise, $\exit(q)$ is the root (hence the special case in 
+Algorithm~\ref{algo:query}).
 \end{proof}
 
-To find the 2-fattest number in an interval, we must need 
+To find the 2-fattest number in an interval $[\ell + 1, r]$, for 
+nonnegative integers $\ell < r$, we need 
 a most significant bit operation.\footnote{More precisely, the 
-2-fattest number in
-$[\ell + 1, r - 1]$ is 
-$-1 \ll \operatorname{msb}(\ell \oplus r) \mathbin\& r$.}, but
-alternatively starting from the interval $(\ell\..r]$
-one can set $i=\lceil\log(r-\ell)\rceil$ (this can be computed trivially in time $O(\log(r-\ell))$)
+2-fattest number in $[\ell, r]$ is 
+$(1^w \texttt{ shl } 
+\operatorname{msb}(\ell \texttt{ xor } r)) \texttt{ and } r$. 
+We wrtie the interval boundaries as $[\ell +1 , r]$ instead of
+$[\ell, r]$, since this allows for the most convenient formulation
+of the operation.}.
+\wolfgang{Discuss background for msb?}
+However, there is an alternative that does not need the most 
+significant bit.
+Starting from the interval $[\ell + 1, r]$
+we set $i = \lceil\log(r - \ell)\rceil$ (trivially, we can find $i$ 
+in time $O(\log(r -\ell))$)
 and then check, for decreasing $i$, whether $(-1\ll i)\mathbin\& \ell \neq (-1\ll i)\mathbin\&
 r$: when the test is satisfied, there is exactly one multiple of $2^i$ in the interval, 
 namely $f=r \mathbin\& -1
