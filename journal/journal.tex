@@ -554,95 +554,123 @@ $(1^w \texttt{ shl }
 We wrtie the interval boundaries as $[\ell +1 , r]$ instead of
 $[\ell, r]$, since this allows for the most convenient formulation
 of the operation.}.
-\wolfgang{Discuss background for msb?}
+\wolfgang{Discuss background for msb in the notation section?}
 However, there is an alternative that does not need the most 
-significant bit.
-Starting from the interval $[\ell + 1, r]$
+significant bit operation.  Starting from the interval $[\ell + 1, r]$
 we set $i = \lceil\log(r - \ell)\rceil$ (trivially, we can find $i$ 
-in time $O(\log(r -\ell))$)
-and then check, for decreasing $i$, whether $(-1\ll i)\mathbin\& \ell \neq (-1\ll i)\mathbin\&
-r$: when the test is satisfied, there is exactly one multiple of $2^i$ in the interval, 
-namely $f=r \mathbin\& -1
-\ll i$, which is also 2-fattest. This property is preserved by splitting on 
-$f$ and possibly further shortening the resulting interval (see the first part
-of the proof of Theorem~\ref{thm:correctnessfbs}), so we can just continue decreasing $i$ and testing, 
-which requires still no more than $\lceil\log(r-\ell)\rceil$ iterations.
+in time $O(\log(r -\ell))$).
+Then we check check, for decreasing $i$, whether 
+$(1^w \texttt{ shl } i)\texttt{ and } \ell \neq 
+ (1^w \texttt{ shl } i) \texttt{ and } r$: 
+when the conidtion is satisfied, there is exactly one multiple of 
+$2^i$ in the interval $[\ell + 1, r]$, 
+namely $c= r \texttt{ and }  (1^w \texttt{ shl } i)$, and
+$c$ is also 2-fattest for $[\ell + 1, r]$. This property is preserved 
+by splitting on $c$ and possibly shortening the resulting interval
+further (see the first part of the proof of 
+Theorem~\ref{thm:correctnessfbs}). Hence, in the process of
+the algorithm, we can just continue decreasing $i$ and testing. 
+The total number of iterations is still at most 
+$\lceil\log(r-\ell)\rceil$.
 
-\subsection{Implementing the function $T$}
+\subsection{Implementing the function $Z$}
 
-A z-fast trie (i.e., the function $T$ defining it) can be implemented in
-different ways; in particular, for the purpose of this paper, we 
-show that if constant-time access to the elements of $S$ in sorted order is
-available, then the function $T$ describing a z-fast trie can be implemented using additional $O(n\log w)$ bits. We will use the
-notation $S[i]$ ($0\leq i<|S|$) for the $i$-th element of $S$. We need two key
-components:
+A z-fast trie $Z$ can be implemented in various ways. 
+Here, we will how that if constant-time access to the 
+elements of $S$ in lexicographically sorted order is 
+available, then $Z$ can be implemented using additional 
+$O(n\log w)$ bits. We write $S[i]$, $0 \leq i < |S|$, 
+for the $i$-th element of $S$. We need two key
+ingredients:
 \begin{enumerate}
-  \item a constant-time function $g$ mapping the handles to the length of the
-  name of the node they are associated with (i.e., $h_\alpha \mapsto
-  |n_\alpha|$ for every internal node $\alpha$);
-  \item a \emph{range locator}---a data structure that, given the name of a
-  node $n_\alpha$, returns the interval of 
-  keys that are prefixed by $n_\alpha$; more precisely, it returns the smallest
-  ($\lrange(n_\alpha)$) and largest index ($\rrange(n_\alpha)$, respectively) in $S$ of
-  the set of strings prefixed by $n_\alpha$.
+  \item a constant-time function $g: \{0,1\}^* \rightarrow \N$ that 
+    maps the handles to the length of the names of their associated 
+    nodes, i.e., $g: h_v \mapsto |n_v|$ for every internal node $v$ 
+    of $T$;
+  \item a \emph{range locator}---a data structure that, given the 
+  name $n_v$ of a node $v$ of $T$, returns the minimum and
+  maximum element of $S$ that is stored in the subtree of $T$
+  rooted at $v$, i.e., the smallest element $S[\lrange(n_v)]$ and the 
+  largest element $S[\rrange(n_v)]$ of $S$ that
+  have $n_v$ as a prefix.
 \end{enumerate}
-The function $g$ can be implemented in constant time using $O(n\log w)$ bits,
+\wolfgang{Cite theorem from intro?}
+The function $g$ can be implemented in constant time 
+using $O(n\log w)$ bits,
+\wolfgang{Specific theorem? Put into intro}
 and there are constant-time range locators using $O(n\log w)$
 bits~\cite{BelazzouguiBoPaVi09}.
 
-Now, to compute $T(h)$ for a given handle $h$, we
-consider the candidate node name $p = h[0\..g(h))$ and return the longest common
-prefix of $S[\lrange(p)]$ and $S[\rrange(p)]$. If $h$ is actually a handle, the whole procedure clearly succeeds and
-we obtain the required information; otherwise, we will be returning
-some unpredictable internal extent (unless $\lrange(p)=\rrange(p)$, but this
+Now, to compute $Z(h)$ for a given handle $h \in \{0, 1\}^*$, we
+consider the candidate node name $p = h[0, g(h) - 1]$, and we 
+use the range locator to find $S[\lrange(p)]$ and $S[\rrange(p)]$.
+Then, we return the longest common prefix of $S[\lrange(p)]$ and 
+$S[\rrange(p)]$ \wolfgang{How do we compute this? Again using msb?}.  
+If $h$ is a valid handle, we clearly obtain the required information. 
+Otherwise, we will get some unpredictable internal extent of $T$
+(unless $\lrange(p)=\rrange(p)$, but this
 case can be easily fixed). Summing up,
 \begin{theorem}
 \label{th:zfast}
 If access to the set $S$ is available, the z-fast trie can be
 implemented in constant time using additional $O(n\log w)$ bits of space.
 \end{theorem}
-This function enjoys the additional property that, no matter which
-the input, it will always return an extent.
-We also notice that using the same data it is also easy to implement a function
-that returns a node extent given a node name:
-\begin{definition}[$\extent$]
-Let $p$ be a node name. Then $\extent(p)$ (the extent of the node named $p$)
-can be computed in constant time as the longest common prefix of $S[\lrange(p)]$ and $S[\rrange(p)])$.
-\end{definition}
+Our implementation of $Z$ enjoys the additional property that, no 
+matter which the input, it will always return an extent.
+We also notice that using the same data structures, it is also easy 
+to implement a function that returns a node extent $e_v$ for a given 
+node name $e_v$:
+\begin{lemma}\label{lem:extent}
+Let $n_v$ be the name of a node $v$ in $T$. Then the extent $e_v$
+of $v$ can be computed in constant time as the longest common 
+prefix of $S[\lrange(n_v)]$ and $S[\rrange(n_v)]$.
+\end{lemma}
 
-\subsection{Using the range locator to check prefixes}
+\subsection{Using the Range Locator to Check Prefixes}
 
-Given a set $P\subseteq \Pref S$, we want to be able to check in constant time
-and little space that a prefix $p$ either belongs to $P$, or is not a prefix of a string in $S$. Assume that we have a function $f$ 
-defined on $P$ and returning, for each $p\in P$, the length of the name of the exit node of $p$. 
-Our key observation is that a range locator, combined with access to the array $S$, can be used to ``patch''
+\wolfgang{Define $\Pref S$}
+Given a set $P\subseteq \Pref(S)$, we want to check in constant time
+and little space that a prefix $p \in \{0, 1\}^*$ either belongs 
+to $P$, or is not a prefix of any string in $S$. Assume that we 
+have a function $f : P \rightarrow \N$ that finds for each
+$p\in P$ the length of the name of $\exit(p)$. 
+Our key observation is that a range locator, combined with access 
+to the sorted array $S$, can be used to ``patch''
 $f$ so that it returns a special value $\bot$ outside of $\Pref S$:
 % \footnote{We remark
-% that we cannot claim that $f$ will return $\bot$ on elements outside of $P$,
-% unless they are not in $\Pref S$ either.} 
+% that we cannot claim that $f$ will return $\bot$ on elements 
+% outside of $P$,  unless they are not in $\Pref S$ either.} 
 \begin{theorem}
 \label{th:pref}
-Let $P\subseteq\Pref S$ and $f: P\to \N$ be a constant-time function mapping
-$p\in P$ to $|n_{\exit p}|$. If access to the set $S$ is available, using an additional
-constant-time range locator we can extend $f$ to a constant-time function $\hat f:2^*\to \N
-\cup\{\bot\}$ such that $\hat f(p)=|n_{\exit p}|$ for all $p \in P$, and $\hat f(p)=\bot$ for
+Let $P \subseteq\Pref(S)$, and let $f: P \rightarrow \N$ be 
+a constant-time function mapping $p \in P$ to $|n_{\exit(p)}|$. 
+If access to the set $S$ and an additional
+constant-time range locator is available, we can extend 
+$f$ to a constant-time function $\widehat{f}: \{0, 1\}^* \rightarrow \N
+\cup \{ \bot \}$ such that $\widehat{f}(p)=|n_{\exit(p)}|$, for 
+all $p \in P$, and $\widehat{f}(p) = \bot$, for
 all $p \not\in\Pref S$.
 \end{theorem}
 \begin{proof}
-To compute $\hat f(p)$ for a $p\in 2^*$ we proceed as follows:
-\begin{enumerate}
-  \item we compute the candidate length $t=f(p)$ of the name of $\exit p$;
-  \item if $t\leq |p|$ and $p\preceq \extent(p[0\..t))$ we return $f(p)$,
-  otherwise we return $\bot$.
-\end{enumerate}
-Clearly, if $p\in P$, by definition $f(p)=|n_{\exit p|}|\leq |p|$, and we
-compute correctly the extent of $\exit p$, so we return $f(p)=|n_{\exit p}|$.
-On the other hand, if $p \not\in \Pref S$ it cannot be the prefix of an element
-of $S$, so in the last step we certainly return $\bot$.
+
+To find $\widehat{f}(p)$ for a $p \in \{0, 1\}^*$, 
+we first compute the candidate length $t = f(p)$ of the name of 
+$\exit(p)$. Then, if $t \leq |p|$, we use the presumed
+name $p[0, t -1]$ of $\exit(p)$ in order to compute 
+the extent $e$ of $\exit(p)$, as in Lemma~\ref{lem:extent}. Now, 
+if $p  \preceq e$, we return $f(p)$, otherwise we return $\bot$.
+
+Clearly, if $p\in P$, then $f(p) = |n_{\exit(p)}| \leq |p|$, and we
+compute correctly the extent of $\exit(p)$, so we return 
+$f(p)=|n_{\exit(p)}|$.
+On the other hand, if $p \not\in \Pref S$, then the test if 
+$p \preceq e$ must fail for every possible extent. 
+Hence, last step certainly returns $\bot$.
 \end{proof}
 
-% Observe that actually $\hat f$ will return the length of the name of the exit
-% node for all prefixes in a set $\hat P$ that satisfies $P\subseteq \hat P\subseteq\Pref S$.
+% Observe that actually $\hat f$ will return the length of the name 
+%of the exit node for all prefixes in a set $\hat P$ that 
+%satisfies $P\subseteq \hat P\subseteq\Pref S$.
 
 \section{Locally Sensitive Predecessor Search}
 \label{sec:pred}
