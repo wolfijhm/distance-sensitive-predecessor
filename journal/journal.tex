@@ -167,6 +167,8 @@ Then, we have several ways to model the
 relationship between $S$ and $q$: 
 let $d(q, S) = \min\{|q - q^-|, |q - q^+|\}$ and 
 $D(q, S) = \max\{|q - q^-|, |q - q^+|\}$.
+We call $d(q,S)$ (respectively, $D(q,S)$) the \emph{short
+distance} (\emph{long distance}) between $q$ and $S$. 
 The distance $d(q, S)$ is small when $q$ is close to an 
 element of $S$, whereas $w - \log D(q, S)$
 is small when $q$ is far from at least one of $q^\pm$.
@@ -458,8 +460,7 @@ $e \gets Z(q[0, c - 1])$\;
   \tcp{Move from $[a, b]$ to $[|e|,b]$}
  $a\gets |e|$\;
 \label{alg1:reass1} 
-}
-\Else{
+} \Else{%
 \tcp{Move from $[a, b]$ to $[a, c]$}
 $b \gets c$\;
 \label{alg1:reass2} 
@@ -615,6 +616,8 @@ case can be easily fixed). Summing up,
 If access to the set $S$ is available, the z-fast trie can be
 implemented in constant time using additional $O(n\log w)$ bits of space.
 \end{theorem}
+
+\subsection{From Exit Nodes to Predecessors}
 Our implementation of $Z$ enjoys the additional property that, no 
 matter which the input, it will always return an extent.
 We also notice that using the same data structures, it is also easy 
@@ -625,6 +628,34 @@ Let $n_v$ be the name of a node $v$ in $T$. Then the extent $e_v$
 of $v$ can be computed in constant time as the longest common 
 prefix of $S[\lrange(n_v)]$ and $S[\rrange(n_v)]$.
 \end{lemma}
+
+First of all, it is clear that we can easily compute the index of 
+the predecessor of a string if its exit node has been determined 
+(e.g., by fat binary search): 
+\wolfgang{Move up and make a lemma.}
+\begin{definition}($\pred$, $\fbs^-$)
+Given a string $q$ and the length $t$ of the name of $\exit(x)$, 
+we define the constant-time function $\pred(q, t)$
+as follows:
+\begin{itemize}
+  \item if $q \preceq \extent(q[0, t - 1])$, or if the first bit of 
+    $q$ at which $q$ and $\extent(q[0, t-1])$ differ is a $0$, 
+    the index of the predecessor of $q$ is $\rrange(\exit(q))-1$ ;
+  \item otherwise, the index of the predecessor of $q$ is 
+    $\rrange(\exit(q))$.
+\end{itemize}
+ We denote with $\fbs^-(q,a,b)$ the predecessor index computed by 
+ running Algorithm~\ref{algo:query} (with inputs $q$, $a$, and $b$) 
+ to obtain the name of $\exit(x)$ and then invoking $\pred$.
+\end{definition}
+
+
+\wolfgang{Make an observation with proof}
+We remark that the definition above implies that predecessor search
+(by means of $\fbs^-(q,0,|q|)$) is possible in time $O(\log w)$ 
+using an index of $O(n\log w)$ bits.
+
+T
 
 \subsection{Using the Range Locator to Check Prefixes}
 
@@ -675,67 +706,42 @@ Hence, last step certainly returns $\bot$.
 \section{Locally Sensitive Predecessor Search}
 \label{sec:pred}
 
-Our purpose is now to combine Theorem~\ref{th:zfast} and~\ref{th:pref} to answer
-efficiently predecessor queries in a way that depends on the distance
-between the query string and its predecessor and successor. 
-First of all, it is clear that we can easily compute the index of the 
-predecessor of a string if its exit node is known (e.g., by fat binary search): 
-\begin{definition}($\pred$, $\fbs^-$)
-Given a string $x$ and the length $t$ of the name of $\exit x$, we define the constant-time function $\pred(x,t)$
-as follows:
-\begin{itemize}
-  \item if $x \preceq \extent(x[0\..t))$, or if the first bit of $x$ at which $x$
-  and $\extent(x[0\..t))$ differ is a $0$, 
-  the index of the predecessor of $x$ is $\lrange(\exit x)-1$ (we use the
-  convention that $-1$ is returned if no predecessor exists);
-  \item otherwise, the index of the predecessor of $x$ is $\rrange(\exit x))$.
-\end{itemize}
- We denote with $\fbs^-(x,a,b)$ the predecessor index computed by running Algorithm~\ref{algo:query} 
- (with inputs $x$, $a$ and $b$) to obtain the name of $\exit x$ and then invoking $\pred$.
-\end{definition}
-We remark that the definition above implies that predecessor search
-(by means of $\fbs^-(x,0,|x|)$) is possible in time $O(\log w)$ using an index
-of $O(n\log w)$ bits.
-
+We now combine Theorems~\ref{th:zfast} and~\ref{th:pref} to answer
+predecessor queries in a way that depends on the distance
+between the query string and its predecessor and successor in $S$. 
 The rest of this section is devoted at making the computation of the
-predecessor of $x$  
-more efficient by storing selected prefixes of strings in $S$ 
+predecessor of $q$  more efficient by storing selected prefixes 
+of strings in $S$ 
 to reduce significantly the initial search interval of
 Algorithm~\ref{algo:query} (i.e., to increase the parameter $a$).
 It turns out that this pre-computation phase does dramatically reduce the number
 of steps required, making them depend on the distance between the query string
-$x$ and its predecessors and successors. More precisely, for a given set $S$ and
-a string $x$, let us define
-\[
-	d(x,S) = \min\{x^+-x,x-x^-\} \quad\text{ and }\quad
-	D(x,S) = \max\{x^+-x,x-x^-\};	
-\]
-if only $x^-$ (equivalently for $x^+$) is defined, we let $d(x,S)=D(x,S)=x-x^-$.
-We call $d(x,S)$ (respectively, $D(x,S)$) the \emph{short
-distance} (\emph{long distance}) between $x$ and $S$. We will devise two
+$x$ and its predecessors and successors. 
+We will devise two
 distinct predecessor algorithms whose performance depend on the short and on the
 long distance between the query string and the queried set $S$:
 both algorithms use the setup described in Theorem~\ref{th:pref} but with a
 different choice of the function $f:P\to \N$. 
 
 
-Before proceeding with the presentation of the algorithms, it is worth observing
-the following lemmata:
+Before proceeding with the presentation of the algorithms, it is 
+worth observing the following lemmata:
 \begin{lemma}
 \label{lemma:hitpref}
-	Let $x$ be a string, $j \leq w-\log d(x,S)$ and $p=x[0\..j)$. Then either $p$
-	or $p+1$ or $p-1$ belong to $\Pref S$. 
+Let $q \in \{0, 1\}^w$, $j \leq w-\log d(q,S)$ and $p=q[0,j - 1]$. 
+Then either $p$ or $p+1$ or $p-1$ belong to $\Pref S$. 
 \end{lemma}
+
 \begin{proof}
-Suppose that neither $p$ nor $p+1$ nor $p-1$ belong to $\Pref S$; there are
-$2^{w-j}$ strings prefixed by $p$ ($x$ being one of them), and the same is true
+Suppose that neither $p$ nor $p+1$ nor $p-1$ belong to $\Pref S$; 
+there are $2^{w-j}$ strings prefixed by $p$ ($x$ being one of them), and the same is true
 of $p-1$ and $p+1$. So, the element $y \in S$ that minimises $|y-x|$ (that will be one
 of $x^-$ or $x^+$) is such that $|y-x|>2^{w-j}$. Hence $d(x,S)>2^{w-j}$, so
 $j>w-\log d(x,S)$, contradicting the hypothesis.
 \end{proof}
 \begin{lemma}
 \label{lemma:shortinprefs}
-	Let $x$ be a string; if $p$ is a prefix of $x$ such that $p \in \Pref S$ and
+Let $x$ be a string; if $p$ is a prefix of $x$ such that $p \in \Pref S$ and
 	$|p|>w-\log D(x,S)$, then $x$ is either smaller or larger than all the
 	elements of $S$ that have $p$ as prefix.
 \end{lemma}
@@ -772,36 +778,39 @@ $p-1$ are probed (if they exist). If we succeed in the first case, we have found
 a valid prefix of $x$ in the trie, and we can proceed with a fat binary search.
 Otherwise, no element is prefixed by $x$, and if by any chance an element is prefixed by $p-1$ or $p+1$ we can easily
 locate its predecessor.
- 
- \iffalse
-\begin{Algorithm}
-\smallskip\textbf{Input:} a nonempty string $x\in 2^w$
 
-\textbf{Output:} the index $i$ such that $S[i]=x^-$ 
-\vspace{-1.5em}
-\begin{tabbing}
-\setcounter{prgline}{0}
-\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
-\pl $i \leftarrow 0$
-\pl \WHILE $2^{2^i} \leq w/2$ \DO
-\pl\> $p \leftarrow x\bigl[0\..w-2^{2^i}\bigr)$
-\pl\>$t \leftarrow \hat f(p)$
-\pl\>\IF $t \neq \bot$ 
-\pl\>\> $e \leftarrow \extent(x[0\..t))$
-\pl\>\> \IF $e\prec x$ \RETURN $\fbs^-(x,|e|,|x|)$ \COMMENT{We found a long extent}
-\pl\>\> \RETURN $\pred(x,t)$ \COMMENT{We exit at	the node of name $x[0\..t)$}
-\pl\> \FI
-\pl\> $t \leftarrow \hat f(p+1)$
-\pl\> \IF $t \neq \bot$ \RETURN $\lrange((p+1)[0\..t))-1$ \COMMENT{$x^-$ is the
-predecessor of $p+1$} \pl\> $t \leftarrow \hat f(p-1)$
-\pl\> \IF $t \neq \bot$ \RETURN $\rrange((p-1)[0\..t))$  \COMMENT{$x^-$ is the
-successor of $p-1$} \pl\OD
-\pl\RETURN $\fbs^-(x,0,|x|)$ \COMMENT{Standard search (we found no
-prefix long enough)}
-\end{tabbing}
-\caption{\label{algo:pred-short}Short-distance speedup.}
-\end{Algorithm}
-\fi
+\begin{algorithm}
+\KwIn{a nonempty string $x\in \{0, 1\}^w$}
+\KwOut{the index $i$ such that $S[i] = x^-$}
+ $i \gets 0$\;
+\While{$2^{2^i} \leq w/2$}{%
+  $p \gets x\bigl[0\..w-2^{2^i}\bigr)$\;
+  $t \leftarrow \hat f(p)$\;
+  \If{$t \neq \bot$ }{%
+       $e \gets \extent(x[0\..t))$\;
+       \If{$e\prec x$}{%
+           \Return{$\fbs^-(x,|e|,|x|)$}\;
+           \tcp{We found a long extent}
+       }
+       \Return{$\pred(x,t)$} 
+       \tcp{We exit at the node of name $x[0\..t)$}
+  }
+  $t \gets \hat f(p+1)$
+  \If{$t \neq \bot$}{%
+    \Return $\lrange((p+1)[0\..t))-1$ 
+    \tcp{$x^-$ is the predecessor of $p+1$} 
+  }
+  $t \leftarrow \hat f(p-1)$
+  \If{$t \neq \bot$}{%
+    \Return $\rrange((p-1)[0\..t))$  
+    \tcp{$x^-$ is the successor of $p-1$} 
+  }
+}
+\tcp{Standard search (we found no prefix long enough)}
+\Return{$\fbs^-(x,0,|x|)$}
+\caption{Short-distance speedup.}
+\label{algo:pred-short}
+\end{algorithm}
 
 More precisely, it turns out that:
 \begin{theorem}
@@ -883,30 +892,33 @@ S$ and longer than $w/2$, hence $w-\log D(x,S)\geq w/2$ and the fat binary
 search at the end of the loop will end within the prescribed time bounds.
 \end{proof}
 
-\iffalse
-\begin{Algorithm}
-\smallskip\textbf{Input:} a nonempty string $x\in 2^w$
+\begin{algorithm}
+\KwIn{a nonempty string $x\in 2^w$}
+\KwOut{the index $i$ such that $S[i]=x^-$}
 
-\textbf{Output:} the index $i$ such that $S[i]=x^-$ 
-\vspace{-1.5em}
-\begin{tabbing}
-\setcounter{prgline}{0}
-\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
-\pl $a \leftarrow 0$
-\pl\WHILE $a<w/2$ \DO
-\pl\> $m \leftarrow \text{least power of 2 in $(a\..w)$}$
-\pl\> $t \leftarrow \hat f(x[0\..m))$
-\pl\> \IF $t = \bot$ \RETURN $\fbs^-(x,a,m)$ \COMMENT{We obtained the longest possible prefix} 
-\pl\> $p \leftarrow x[0\..t)$
-\pl\> \IF $S[\lrange(p)]\geq x$ \RETURN $\lrange(p)-1$ 
-\pl\> \IF $S[\rrange(p)]<x$ \RETURN $\rrange(p)$
-\pl\> $a \leftarrow |\extent(p)|$ \COMMENT{This is a valid extent}
-\pl\OD 
-\pl\RETURN $\fbs^-(x,a,w)$
-\end{tabbing}
-\caption{\label{algo:pred-long}Long-distance speedup.}
-\end{Algorithm}
-\fi
+ $a \gets 0$\;
+\While{$a<w/2$}{%
+  $m \gets \text{least power of 2 in $(a\..w)$}$\;
+  $t \gets \hat f(x[0\..m))$\;
+  \If{$t = \bot$}{%
+     \Return{$\fbs^-(x,a,m)$}
+     \tcp{We obtained the longest possible prefix} 
+  }
+  $p \gets x[0\..t)$
+  \If{$S[\lrange(p)]\geq x$}{%
+    \Return{$\lrange(p)-1$}
+  }
+  \If{$S[\rrange(p)]<x$}{%
+    \Return $\rrange(p)$
+  }
+  $a \gets |\extent(p)|$ 
+  \tcp{This is a valid extent}
+}
+\Return{$\fbs^-(x,a,w)$}
+
+\caption{Long-distance speedup.}
+\label{algo:pred-long}
+\end{algorithm}
 
 Finally, we can combine our improvements for short and long distances, obtaining an algorithm that is
 efficient when the input $x$ is either very close to or very far from $x^-$ or $x^+$:
@@ -968,33 +980,40 @@ Algorithm~\ref{algo:pred-long}, but applied to a reduced universe (the strings
 starting with $e$); the running time thus becomes
 $O(\log(w-|e|-\log D(x,S)|)=O(\log(\log|x-y|-\log D(x,S)))$.
 
-\iffalse
-\begin{Algorithm}
-\smallskip\textbf{Input:} a nonempty string $x\in 2^w$ and a $y\in S$ such that $y<x$
+\begin{algorithm}
+\KwIn{a nonempty string $x\in 2^w$ and a $y\in S$ such that $y<x$}
+\KwOut{index $i$ such that $S[i]=x^-$}
 
-\textbf{Output:} the index $i$ such that $S[i]=x^-$ 
-\vspace{-1.5em}
-\begin{tabbing}
-\setcounter{prgline}{0}
-\hspace{0.5cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \hspace{0.3cm} \= \kill
-\pl $t\leftarrow \max\{\,s\mid y[0\..s)+1\preceq x\,\}$
-\pl $e\leftarrow\extent(y[0\..t)+1)$
-\pl\IF $y[0\..t)+1\not\preceq e$ \RETURN $\rrange(y[0\..t))$
-\COMMENT{$y[0\..t)+1\not\in\Pref S$} \pl\IF $e\not\prec x$ \RETURN $\pred(x,t)$
-\COMMENT{$x$ exits between $y[0\..t)+1$ and $e$} \pl $a \leftarrow 0$
-\COMMENT{Now $e\prec x$ and $w-|e|\leq\log|x-y|$} \pl\WHILE $a<(w-|e|)/2$ \DO
-\pl\> $m \leftarrow \text{least power of 2 in $(a-|e|\..w-|e|)$}$
-\pl\> $p \leftarrow x[0\..m+|e|)$
-\pl\> \IF $p\not\in\Pref S$ \RETURN $\fbs^-(x,a+|e|,m+|e|)$	 
-\pl\> \IF $S[\lrange(p)]\geq x$ \RETURN $\lrange(p)-1$
-\pl\> \IF $S[\rrange(p)]<x$ \RETURN $\rrange(p)$
-\pl\> $a \leftarrow |\extent(p)|-|e|$ \COMMENT{This is a valid extent}
-\pl\OD 
-\pl\RETURN $\fbs^-(x,a+|e|,w)$
-\end{tabbing}
+$t \gets \max\{\,s\mid y[0\..s)+1\preceq x\,\}$\;
+$e \gets \extent(y[0\..t)+1)$\;
+\If{$y[0\..t)+1\not\preceq e$}{%
+  \Return $\rrange(y[0\..t))$
+}
+\tcp{$y[0\..t)+1\not\in\Pref S$} 
+\If{$e\not\prec x$}{% 
+  \Return{$\pred(x,t)$}
+}
+\tcp{$x$ exits between $y[0\..t)+1$ and $e$} 
+$a \gets 0$\;
+\tcp{Now $e\prec x$ and $w-|e|\leq\log|x-y|$} 
+\While{$a<(w-|e|)/2$}{%
+  $m \gets \text{least power of 2 in $(a-|e|\..w-|e|)$}$\;
+  $p \gets x[0\..m+|e|)$
+  \If{$p\not\in\Pref S$}{%
+    \Return $\fbs^-(x,a+|e|,m+|e|)$
+  }
+  \If{$S[\lrange(p)]\geq x$}{%
+    \Return{$\lrange(p)-1$}
+  }
+  \If{$S[\rrange(p)] < x$}{%
+    \Return{$\rrange(p)$}
+  }
+  $a \gets |\extent(p)|-|e|$ 
+  \tcp{This is a valid extent}
+}
+\Return{$\fbs^-(x,a+|e|,w)$}
 \caption{\label{algo:finger}Long-distance finger-search speedup.}
-\end{Algorithm}
-\fi
+\end{algorithm}
 
 
 \begin{theorem}
