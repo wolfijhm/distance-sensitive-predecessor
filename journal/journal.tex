@@ -23,8 +23,8 @@
 \DeclareMathOperator{\lcp}{lcp} % longest common prefix
 \DeclareMathOperator{\lca}{lca} % least common ancestor
 \DeclareMathOperator{\exit}{exit}
-\DeclareMathOperator{\lrange}{left}
-\DeclareMathOperator{\rrange}{right}
+\DeclareMathOperator{\lrange}{\ell}
+\DeclareMathOperator{\rrange}{r}
 \DeclareMathOperator{\extent}{extent}
 \DeclareMathOperator{\Pref}{Pref}
 \DeclareMathOperator{\pred}{pred}
@@ -250,9 +250,9 @@ We use $\log x$ to denote the binary logarithm, and we set
 $\log x := 1$, for $x \leq 2$.
 We write $\eps$ for the empty string. For $k \in \N$, we denote by 
 $\{0, 1\}^k$ the set of all binary strings of length $k$, by 
-$\{0,1\}^* = \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
+$\{0,1\}^+ = \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
 nonempty finite binary strings, and by 
-$\{0,1\}^+ = \{0, 1\}^+ \cup \{\eps\}$ the set of all finite binary 
+$\{0,1\}^* = \{0, 1\}^+ \cup \{\eps\}$ the set of all finite binary 
 strings. The length of $q \in \{0, 1\}^*$ is denoted by $|q|$.
 For a string $q \in \{0, 1\}^*$ and $a, b \in \N$ with $a \leq b$, 
 we write $q[a, b]$ for the substring of $q$ starting at position
@@ -260,7 +260,11 @@ $a$ and ending at position $b$.  The indices start from $0$.
 We abbreviate $q[a, a]$ as $q[a]$. For two binary strings 
 $q, r \in \{0,1\}^*$, we write $q \preceq r$ to indicate that $q$ is 
 a prefix of $r$, and $q \prec r$ to indicate that $q$ is a proper 
-prefix of $r$. Given a string 
+prefix of $r$. 
+Given a set $S \subseteq \{0, 1\}^*$, we write 
+$\Pref(S) = \{p \in \{0, 1\}^* \mid \exists s \in S: p \preceq s\}$
+for the set of all prefixes of the strings in $S$.
+Given a string 
 $q \in \{0,1\}^+$, we denote with $q + 1$ and $q - 1$ the strings in 
 $\{0, 1\}^{|q|}$ that come before and after $q$ in lexicographic 
 order. We use the convention that $0^k - 1 = 1^k + 1 = \bot$, for 
@@ -275,6 +279,7 @@ randomness assumption for hashing~\wolfgang{Reference?}. Note,
 however, that these two assumptions are only needed for an 
 efficient implementation of our hash maps (see below);
 for the rest, our algorithms do not depend on them.
+\wolfgang{Add something about the mcb operation?}
 
 \paragraph{Predecessor and Successor Queries.}
 Given a set $S \subseteq \{0, 1\}^w$ of $n$ binary strings of 
@@ -289,9 +294,11 @@ lexicographic order, and for $q \in \{0, 1\}^w$, we set
 If the maximum or minimum does not exist, we set $q^- = \bot$ or 
 $q^+ = \bot$.  A \emph{predecessor} or \emph{successor query} is
 given by a string $q \in \{0, 1\}^w$, and the answer is $q^-$ or 
-$q^+$. In fact, we shall focus exclusively on predecessor queries, 
+$q^+$. In fact, we shall focus exclusively on predecessor queries. 
+This does not affect the generality of our results,
 also because our algorithms actually return the \emph{rank} of the 
 predecessor in $S$, and thus are in principle more informative 
+than basic predecessor operations
 (e.g., the successor can be immediately computed by incrementing 
 the resulting index).
 
@@ -326,9 +333,9 @@ practical implementations see~\cite{BelazzouguiBoPaVi11}).
 
 
 
-\subsection{Z-fast tries} 
+\section{Z-fast Tries} 
 
-\paragraph{Compressed Tries.}
+\subsection{Compressed Tries}
 Our data structure is based on \emph{compressed
 tries}~\cite{CormenLeRiSt09,Knuth98}. These are defined as
 follows: let $S \subseteq \{0, 1\}^w$. The \emph{trie} $T'$ for $S$ 
@@ -338,7 +345,8 @@ The root has extent $\eps$. For each inner node $v$, the left child
 $u$ of $v$  has $e_u = e_v0$, and the right child $w$ of $v$ has 
 $e_w = e_v1$ (one of the two children may not exist). The extents of
 the leaves correspond to the elements of $S$, and the extents of the 
-inner nodes are prefixes for the elements in $S$, see Figure~\ref{fig:trie}.
+inner nodes are prefixes for the elements in $S$, see 
+Figure~\ref{fig:trie}.
 
 \begin{figure}
   \centering
@@ -403,7 +411,7 @@ Dashed lines show the end of the handles of internal nodes.}
 \label{fig:ztrie}
 \end{figure}
 
-\paragraph{Z-fast Tries and Fat Binary Search.}
+\subsection{Z-fast Tries and Fat Binary Search}
 We recall some key definitions from~\cite{BelazzouguiBoPaVi09}:
 
 \begin{definition}[2-fattest numbers and handles] 
@@ -435,14 +443,17 @@ of $T$.
 
 Given the z-fast trie $Z$, we can determine very quickly
 the name of the exit node for any query string $q \in \{0,1\}^+$.
-For this, we use \emph{fat} binary search, see Algorithm~\ref{algo:query}. 
+For this, we use a variant of binary search, called 
+\emph{fat binary search} see Algorithm~\ref{algo:query}. 
 The algorithm locates the longest internal extent $e$ that is a 
 proper prefix of $q$. For $e$, the name of $\exit(q)$ is obtained as
 $q[0, |e| + 1]$. Given an initial search interval $[a,b]$, the 
-algorithm repeatedly splits it on its 2-fattest number 
-(rather than on its midpoint).
-The fat binary search reported here (which builds 
-upon~\cite{BelazzouguiBoVi10}) has two main features:
+fat binary search repeatedly splits it on its 2-fattest number, 
+rather than on its midpoint. This makes the search order more
+predictable among different starting intervals and thus allows 
+for effective preprocessing.
+The algorithm reported here, an extension of the 
+result from~\cite{BelazzouguiBoVi10}, has two main features:
 it imposes very weak requirements on $Z$, and it allows us to start 
 the search on a small interval. The latter feature will be the key 
 in obtaining our main results.
@@ -483,15 +494,15 @@ increasing length.  Let $[a, b]$ be the interval maintained by
 Algorithm~\ref{algo:query}. Before and after each iteration, the 
 following invariants are satisfied: 
 \begin{enumerate}
-    \item\label{enu:lema} $a = |p_j|$, for some $j$;
-    \item\label{enu:lemb} $|p_t|< b$.
+    \item\label{enu:lema} $a = |e_j|$, for some $j$;
+    \item\label{enu:lemb} $|e_t|< b$.
 \end{enumerate}
-Thus, at the end of the loop, $a = |p_t|$.
+Thus, at the end of the loop, $a = |e_t|$.
 \end{lemma}
 
 \begin{proof}
 We begin with invariant (\ref{enu:lema}).
-By assumption, the condition $a = |p_j|$, for some $j$, holds
+By assumption, the condition $a = |e_j|$, for some $j$, holds
 initially. The condition is maintained whenever
 $a$ is assigned a new value in line~\ref{alg1:reass1}. 
 Indeed, suppose that currently $a = |e_j|$, for some $j$, and
@@ -499,11 +510,11 @@ that line~\ref{alg1:reass1} is reached. Then, since $e$ is an
 internal extent, since $|e_j| = a  < c  \leq |e|$, 
 and since $e \prec q$, it follows that $e = e_k$, for some $k > j$.
 
-Next, we prove invariant (\ref{enu:lemb}).
-By assumption, the condition $b > |e_t|$ holds initially.
+Next, we consider invariant (\ref{enu:lemb}).
+By assumption, the condition $|e_t| < b$ holds initially.
 To show that the invariant is preserved,
 suppose that at the beginning of an iteration of the
-\textbf{while}-loop, we have $b > |e_t|$.
+\textbf{while}-loop, we have $|e_t| < b$.
 By invariant (\ref{enu:lema}), $a = |e_j|$, for some $j$.  
 Let $v_{j+1}, \dots, v_{t}$ be the inner nodes in $T$ 
 with $e_{v_k} = e_k$, for $k = j + 1, \dots, t$.
@@ -516,7 +527,7 @@ it is also 2-fattest in the skip interval of $v_k$.
 Hence, we have $q[0, c - 1] = h_{v_k}$ and 
 $Z(q[0, c - 1]) = e_k$, 
 which satisfies $c \leq |e_k|$ and $e_k  \prec q$. 
-Thus, line~\ref{alg1:reass2} is executed only if $c > |e_t|$.
+Thus, line~\ref{alg1:reass2} is executed only if $|e_t| < c$.
 The invariant $|e_t| < b$ is preserved.
 \end{proof}
 
@@ -524,17 +535,17 @@ The invariant $|e_t| < b$ is preserved.
 \label{thm:correctnessfbs}
 Algorithm~\ref{algo:query} takes at most $\lceil\log(b-a)\rceil$
 iterations
-and returns the name of $\exit(q)$.
+and finds the name of $\exit(q)$.
 \end{theorem}
 
 \begin{proof}
 We first bound the number of iterations. Let 
 $[\ell, r]$ be an interval that contains at most one multiple of 
 $2^i$, and let $c$ be the 2-fattest number in $[\ell, r]$. Then, 
-the two subintervals $[\ell, c - 1]$ and $[c + 1, r]$ each contain at most 
-one multiple of $2^{i-1}$ (if one interval contained two such 
+the two subintervals $[\ell, c - 1]$ and $[c + 1, r]$ each contain 
+at most one multiple of $2^{i-1}$: if one interval contained two such 
 multiples, it would also contain a multiple of $2^i$
-in the interior, contradicting our assumption).
+in the interior, contradicting our assumption.
 By induction, it follows that after splitting
 at most $i$ times, the resulting interval has length at most one. 
 Now, since an interval of length $k$ contains at most one multiple of 
@@ -548,106 +559,146 @@ Algorithm~\ref{algo:query}).
 
 To find the 2-fattest number in an interval $[\ell + 1, r]$, for 
 nonnegative integers $\ell < r$, we need 
-a most significant bit operation.\footnote{More precisely, the 
+an \texttt{msb}-operation.\footnote{More precisely, the 
 2-fattest number in $[\ell, r]$ is 
 $(1^w \texttt{ shl } 
-\operatorname{msb}(\ell \texttt{ xor } r)) \texttt{ and } r$. 
-We wrtie the interval boundaries as $[\ell +1 , r]$ instead of
+\texttt{msb}(\ell \texttt{ xor } r)) \texttt{ and } r$. 
+We write the interval boundaries as $[\ell +1 , r]$ instead of
 $[\ell, r]$, since this allows for the most convenient formulation
-of the operation.}.
-\wolfgang{Discuss background for msb in the notation section?}
+of the operation.}
 However, there is an alternative that does not need the most 
 significant bit operation.  Starting from the interval $[\ell + 1, r]$
 we set $i = \lceil\log(r - \ell)\rceil$ (trivially, we can find $i$ 
 in time $O(\log(r -\ell))$).
-Then we check check, for decreasing $i$, whether 
+Then we check, for decreasing $i$, whether 
 $(1^w \texttt{ shl } i)\texttt{ and } \ell \neq 
  (1^w \texttt{ shl } i) \texttt{ and } r$: 
-when the conidtion is satisfied, there is exactly one multiple of 
+when the condition is satisfied, there is exactly one multiple of 
 $2^i$ in the interval $[\ell + 1, r]$, 
 namely $c= r \texttt{ and }  (1^w \texttt{ shl } i)$, and
 $c$ is also 2-fattest for $[\ell + 1, r]$. This property is preserved 
 by splitting on $c$ and possibly shortening the resulting interval
-further (see the first part of the proof of 
+further (see the beginning of the proof of 
 Theorem~\ref{thm:correctnessfbs}). Hence, in the process of
 the algorithm, we can just continue decreasing $i$ and testing. 
 The total number of iterations is still at most 
 $\lceil\log(r-\ell)\rceil$.
 
-\subsection{Implementing the function $Z$}
+\subsection{Implementing the Function $Z$}
 
-A z-fast trie $Z$ can be implemented in various ways. 
-Here, we will how that if constant-time access to the 
-elements of $S$ in lexicographically sorted order is 
-available, then $Z$ can be implemented using additional 
-$O(n\log w)$ bits. We write $S[i]$, $0 \leq i < |S|$, 
-for the $i$-th element of $S$. We need two key
-ingredients:
+To implement the z-fast trie $Z$, we require two
+basic components:
 \begin{enumerate}
-  \item a constant-time function $g: \{0,1\}^* \rightarrow \N$ that 
-    maps the handles to the length of the names of their associated 
-    nodes, i.e., $g: h_v \mapsto |n_v|$ for every internal node $v$ 
+  \item a \emph{handle resolver} $g: \{0,1\}^* \rightarrow \N$ that 
+    maps each handle of $T$ to the length of the name of its associated 
+    node, i.e., $g: h_v \mapsto |n_v|$ for every internal node $v$ 
     of $T$;
-  \item a \emph{range locator}---a data structure that, given the 
+  \item a \emph{range locator} that, given the 
   name $n_v$ of a node $v$ of $T$, returns the minimum and
   maximum element of $S$ that is stored in the subtree of $T$
-  rooted at $v$, i.e., the smallest element $S[\lrange(n_v)]$ and the 
-  largest element $S[\rrange(n_v)]$ of $S$ that
+  rooted at $v$, i.e., the smallest element $s_{\lrange(v)}$ and the 
+  largest element $s_{\rrange(v)}$ of $S$ that
   have $n_v$ as a prefix.
 \end{enumerate}
-\wolfgang{Cite theorem from intro?}
-The function $g$ can be implemented in constant time 
-using $O(n\log w)$ bits,
-\wolfgang{Specific theorem? Put into intro}
-and there are constant-time range locators using $O(n\log w)$
-bits~\cite{BelazzouguiBoPaVi09}.
 
-Now, to compute $Z(h)$ for a given handle $h \in \{0, 1\}^*$, we
-consider the candidate node name $p = h[0, g(h) - 1]$, and we 
-use the range locator to find $S[\lrange(p)]$ and $S[\rrange(p)]$.
-Then, we return the longest common prefix of $S[\lrange(p)]$ and 
-$S[\rrange(p)]$ \wolfgang{How do we compute this? Again using msb?}.  
-If $h$ is a valid handle, we clearly obtain the required information. 
-Otherwise, we will get some unpredictable internal extent of $T$
-(unless $\lrange(p)=\rrange(p)$, but this
-case can be easily fixed). Summing up,
+These two data structure allow for several efficient operations
+on $T$. As was also observed by \Patrascu~\cite{Patrascu10}, the 
+additional indirection will lead to a space efficient implementation.
+Let $n_v \in \{0, 1\}^*$ be the name of a node $v \in T$. We 
+write $\extent(n_v)$ for the extent $e_v$ of $v$. Using a range locator,
+we can implement the function $\extent(\cdot)$ with constant overhead.
+
+\begin{lemma}\label{lem:getextent}
+Suppose that a range locator for $T$ is available. Then, for any
+given given name $n \in \{0, 1\}^*$ for a node in $T$, we can
+find $\extent(n)$ with one call to the range locator and $O(1)$
+additional operations.  If $n$ is not a valid name in $T$, then
+the procedure still provides a valid extent in $T$.
+\end{lemma}
+
+\begin{proof}
+Given $n$, we use the range locator to find 
+two elements $s_\ell$ and $s_r$ in $S$.
+If $s_\ell = s_r$, we return $s_\ell$,
+otherwise, we return the longest common prefix of 
+$s_\ell$ and $s_r$. This can be done in
+$O(1)$ time \wolfgang{using the msb operation?}
+The procedure certainly returns a valid extent
+in $T$, and if $n$ is the actual name of node
+$v$ in $T$, then the result is $\extent(n)$, 
+as desired.
+\end{proof}
+
+Combining Lemma~\ref{lem:getextent} with a handle resolver,
+we can implement the z-fast trie efficiently.
+
+\begin{lemma}\label{lem:implementz}
+Suppose that a handle resolver and a range locator for $T$ are 
+available. Then, for any given given handle $h \in \{0, 1\}^*$ for 
+a node in $T$, we can
+find $Z(h) = \extent(h)$ with one call to the handle resolver, one
+call to the range locator and $O(1)$
+additional operations.  If $h$ is not a valid handle in $T$, then
+the procedure still provides a valid extent in $T$.
+\end{lemma}
+
+\begin{proof}
+We use the handle resolver to compute the presumed length
+$a$ of the name corresponding to $h$.
+Then, let $n = h[0, a - 1]$ be the resulting
+candidate node name and use Lemma~\ref{lem:getextent}
+to find a presumed extent for $h$.
+If $h$ is a valid handle, we obtain the required information by
+Lemma~\ref{lem:getextent} and by the correctness of the handle 
+resolver. Otherwise, we still get a valid extent.
+\end{proof}
+
+Now, by Theorem~\ref{thm:succinct_retrieval_only_hashtable},
+we can implement a handle resolver with constant 
+query time, and with $O(n \log w)$ bits of 
+space.  Furthermore, if $S = \langle s_1, s_2, \dots, s_n\rangle$ 
+is given in lexicographic sorted order and can be accessed in
+constant time,
+there is a constant-time range locator for $S$ using $O(n\log w)$
+bits~\cite{BelazzouguiBoPaVi09}.
+\wolfgang{Specific theorem? Put into intro}
+This leads to the following theorem.
+
 \begin{theorem}
 \label{th:zfast}
-If access to the set $S$ is available, the z-fast trie can be
+Let $S \subseteq \{0, 1\}^w$.
+If $S$ is given in lexicographic order and if constant time
+access to $S$ is available, a z-fast trie $Z$ for $S$ can be
 implemented in constant time using additional $O(n\log w)$ bits of space.
+\qed
 \end{theorem}
 
 \subsection{From Exit Nodes to Predecessors}
-Our implementation of $Z$ enjoys the additional property that, no 
-matter which the input, it will always return an extent.
-We also notice that using the same data structures, it is also easy 
-to implement a function that returns a node extent $e_v$ for a given 
-node name $e_v$:
-\begin{lemma}\label{lem:extent}
-Let $n_v$ be the name of a node $v$ in $T$. Then the extent $e_v$
-of $v$ can be computed in constant time as the longest common 
-prefix of $S[\lrange(n_v)]$ and $S[\rrange(n_v)]$.
-\end{lemma}
 
+Once the exit name for the exit node $\exit(q)$ of a query 
+string $q \in \{0, 1\}^w$ is known, we can find the predecessor quickly
 First of all, it is clear that we can easily compute the index of 
 the predecessor of a string if its exit node has been determined 
 (e.g., by fat binary search): 
 \wolfgang{Move up and make a lemma.}
-\begin{definition}($\pred$, $\fbs^-$)
+
+\begin{lemma}
+Let $q \in \{0, 1\}^w$ be a query string, and
+let $t$ be the length of the name of $\exit(q)$.
+\end{lemma}
+\begin{proof}
+  If $q \preceq \extent(q[0, t - 1])$, or if the first bit of 
+    $q$ at which $q$ and $\extent(q[0, t-1])$ differ is a $0$, 
+    the index of the predecessor of $q$ is $\rrange(\exit(q))-1$ ;
+  Otherwise, the index of the predecessor of $q$ is 
+    $\rrange(\exit(q))$.
+\end{proof}
 Given a string $q$ and the length $t$ of the name of $\exit(x)$, 
 we define the constant-time function $\pred(q, t)$
 as follows:
-\begin{itemize}
-  \item if $q \preceq \extent(q[0, t - 1])$, or if the first bit of 
-    $q$ at which $q$ and $\extent(q[0, t-1])$ differ is a $0$, 
-    the index of the predecessor of $q$ is $\rrange(\exit(q))-1$ ;
-  \item otherwise, the index of the predecessor of $q$ is 
-    $\rrange(\exit(q))$.
-\end{itemize}
  We denote with $\fbs^-(q,a,b)$ the predecessor index computed by 
  running Algorithm~\ref{algo:query} (with inputs $q$, $a$, and $b$) 
  to obtain the name of $\exit(x)$ and then invoking $\pred$.
-\end{definition}
 
 
 \wolfgang{Make an observation with proof}
@@ -655,11 +706,8 @@ We remark that the definition above implies that predecessor search
 (by means of $\fbs^-(q,0,|q|)$) is possible in time $O(\log w)$ 
 using an index of $O(n\log w)$ bits.
 
-T
-
 \subsection{Using the Range Locator to Check Prefixes}
 
-\wolfgang{Define $\Pref S$}
 Given a set $P\subseteq \Pref(S)$, we want to check in constant time
 and little space that a prefix $p \in \{0, 1\}^*$ either belongs 
 to $P$, or is not a prefix of any string in $S$. Assume that we 
