@@ -314,10 +314,10 @@ of their data structure.
 
 \begin{theorem}\label{thm:succinct_retrieval_only_hashtable}
 For any $r \geq 1$, there exists a dynamic dictionary that
-stores entries with keys from $U$ and with associated
-values of $r$ bits each.
+stores entries with keys from $\{0, \dots, 2^w-1\}$ and with 
+associated values of $r$ bits each.
 The dictionary supports updates and queries in $O(1)$ time,
-using $O(n \log\log (|U|/n) + nr)$ \emph{bits} of space.
+using $O(n \log(w - \log n) + nr)$ \emph{bits} of space.
 The bounds for the space and the queries are
 worst-case, the bounds for the updates hold with
 high probability.\qed
