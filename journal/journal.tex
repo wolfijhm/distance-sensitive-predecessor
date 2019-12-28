@@ -6,7 +6,7 @@
 \usepackage{cite}
 \usepackage{xcolor}
 
-\newtheorem{theorem} {Theorem}[section]
+\newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{definition}[theorem]{Definition}
@@ -60,7 +60,7 @@ and
 M. Ehrhardt and W. Mulzer.  \emph{Delta-Fast Tries: Local 
 Searches in Bounded Universes with Linear Space}. Proc.~15th WADS,
 2017.  WM was partially 
-supported by DFG project MU/3501-1.}}
+supported by DFG project MU/3501-1 and ERC StG 757609.}}
 
 \author{Djamal Belazzougui\thanks{Universit\'e Paris 
         Diderot---Paris 7, France,
@@ -89,91 +89,132 @@ supported by DFG project MU/3501-1.}}
 \wolfgang{TODO}
 \end{abstract}
 
+\iffalse
 \section{Sensitive Abstract}
-A \emph{predecessor (successor) search} finds the largest element $x^-$ smaller
-than the input string $x$ (the smallest element $x^+$ larger than or equal to
-$x$, respectively) out of a given set $S$; in this paper, we consider
-the static case (i.e., $S$ is fixed and does not change over time) and assume that
-the $n$ elements of $S$ are available for inspection. We present a number of
-algorithms that, with a small additional index (usually of $O(n\log w)$ bits,
-where $w$ is the string length), can answer predecessor/successor queries
-quickly and with time bounds that depend on different kinds of \emph{distance},
-improving significantly several results that appeared in the recent literature.
-Intuitively, our first result has a running time that depends on the distance
-between $x$ and $x^\pm$: it is especially efficient when the input $x$ is
-either very close to or very far from $x^-$ or $x^+$; our second result depends on some global notion of distance in the set $S$,
-and is fast when the elements of $S$ are more or less equally spaced in the universe; finally, for our third result
-we rely on a \emph{finger} (i.e., an element of $S$) to improve upon the first
-one; its running time depends on the distance between the input and the
-finger.
+A \emph{predecessor (successor) search} finds the largest 
+element $x^-$ smaller than the input string $x$ (the smallest 
+element $x^+$ larger than or equal to $x$, respectively) out of 
+a given set $S$; in this paper, we consider the static case 
+(i.e., $S$ is fixed and does not change over time) and assume 
+that the $n$ elements of $S$ are available for inspection. We 
+present a number of algorithms that, with a small additional 
+index (usually of $O(n\log w)$ bits, where $w$ is the string 
+length), can answer predecessor/successor queries quickly and 
+with time bounds that depend on different kinds of \emph{distance},
+improving significantly several results that appeared in the 
+recent literature. Intuitively, our first result has a running 
+time that depends on the distance between $x$ and $x^\pm$: 
+it is especially efficient when the input $x$ is either very 
+close to or very far from $x^-$ or $x^+$; our second result 
+depends on some global notion of distance in the set $S$,
+and is fast when the elements of $S$ are more or less equally 
+spaced in the universe; finally, for our third result we rely 
+on a \emph{finger} (i.e., an element of $S$) to improve upon 
+the first one; its running time depends on the distance between 
+the input and the finger.
+\fi
 
 \section{Introduction}
 
-Predecessor searching is one of the oldest problems in theoretical 
-computer science~\cite{CormenLeRiSt09,Knuth98}: let $U$ be a totally
-ordered universe. The task is to maintain a set $S \subseteq U$, 
-while supporting \emph{predecessor} and \emph{successor} queries: 
-given $q \in U$, find the largest element in $S$ smaller than $q$ 
-($q$'s predecessor) or the smallest element in $S$ larger than $q$ 
-($q$'s successor). In the \emph{dynamic} version of the problem, we
-also allow modification of $S$ by inserting and/or deleting elements.
+Predecessor searching is one of the oldest problems 
+in theoretical computer science~\cite{CormenLeRiSt09,Knuth98}: 
+let $U$ be a totally ordered universe. The task is 
+to store a subset $S$ of $U$, while supporting 
+\emph{predecessor} and \emph{successor} queries: 
+given $q \in U$, find the largest element in $S$ 
+smaller than $q$ (the predecessor of $q$) or the 
+smallest element in $S$ larger than $q$ (the 
+successor of $q$). In the \emph{dynamic} version, 
+we also allow modification of $S$ by insertion 
+and/or deletion of elements from $U$.
 
-In the \emph{word-RAM} model of computation, all input elements are 
-$w$-bit words, where $w \in \N$ is a parameter. Without loss of 
-generality, we may assume that $w$ is a power of $2$. This does not 
-change the asymptotic bounds. The model lets us manipulate the input 
-elements at the bit level, in constant time per operation. On the 
-word-RAM, we may assume that the universe is 
-$U = \{0, \dots, 2^{w}-1\}$. A classic solution for predecessor 
-searching on the word-RAM is due to van Emde Boas, who described a 
-dynamic data structure that requires space $O(n)$ and supports 
-insertions, deletions, and predecessor queries in 
-$O(\log w) = O(\log\log |U|)$ time~\cite{vEmdeBoas77,vEmdeBoasKaZi76,CormenLeRiSt09}.
-Here, $n$ denotes the current size of the set $S$. This data 
+For the predecessor searching problem, the model 
+of computation is of particular importance. In 
+the \emph{word-RAM} model, all input elements 
+are represented by $w$-bit \emph{words}, where 
+$w \in \N$ is a parameter. Thus, we can assume 
+that the universe is $U = \{0, \dots, 2^{w}-1\}$. 
+Moreover, we assume that $w$ 
+is a power of $2$. This does not lead to any 
+loss of generality, since our asymptotic bounds 
+are not affected by changing $w$ by a factor of 
+at most $2$. The word-RAM model allows us to 
+manipulate the data words at the bit level, 
+in constant time per operation. A classic 
+method for predecessor searching on the 
+word-RAM is due to van Emde Boas, who described 
+a dynamic data structure that requires $O(n)$ words
+of space and supports insertions, deletions, and 
+predecessor queries in 
+$O(\log w) = O(\log\log |U|)$ 
+time~\cite{vEmdeBoas77,vEmdeBoasKaZi76,CormenLeRiSt09}.
+Here, $n$ denotes the current size of the
+(dynamically changing) set $S$. This data 
 structure is now commonly known as the 
-\emph{van-Emde-Boas tree}.
+\emph{van-Emde-Boas tree}~\cite{CormenLeRiSt09}.
 
-For the classic pointer machine model of computation, it has been 
-known for a long time that a variant of the van-Emde-Boas tree 
-provides optimal performance~\cite{MehlhornNaAl88,Mulzer09}.
+For the \emph{pointer machine} model of computation, 
+which is more restrictive than the word-RAM, it has 
+been known for a long time that a variant of the 
+van-Emde-Boas tree provides optimal 
+performance~\cite{MehlhornNaAl88,Mulzer09}.
 For the word RAM, \Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
-recently showed that structures similar to van-Emde-Boas 
-trees (e.g., $y$-fast tries~\cite{Willard83}) with query
-time $O(\log w)$ are optimal, assuming that we require 
-the space usage to be linear in $|S|$. In fact, the lower 
-bound of \Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
-has several cases, depending on the space allowance. 
+recently showed that structures similar to the 
+van-Emde-Boas tree (e.g., $y$-fast tries~\cite{Willard83}) 
+with query time $O(\log w)$ are optimal, assuming that 
+we desire the space requirement to be linear in the 
+size of $S$. More generally, the lower bound of 
+\Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
+encompasses several regimes, depending on the 
+space that is available for the data structure.
 For instance, another case is realized by exponential 
-trees~\cite{AnderssonTh07}. A very comprehensive discussion 
-of the literature can be found in Mihai \Patrascu's
-thesis~\cite{Patrascu08}.
+trees~\cite{AnderssonTh07}.\wolfgang{Which case is this?} 
+For a comprehensive discussion of the literature, we refer
+the reader to Mihai \Patrascu's thesis~\cite{Patrascu08}.
 
-These results settle the worst-case complexity 
-of predecessor searching. However, there is 
-still room for improvement: first, if 
-we have access to the original set $S$ (as a sorted array), 
-we could in principle devise an index using 
-\emph{sublinear} additional space and still answer 
-predecessor queries in optimal time; second, we could
-obtain a more nuanced picture of the problem time by 
-making the query time dependent on the structure of $S$ 
-or on the relationship between the query element $q$ 
-and the set $S$. More concretely, suppose our data structure 
-currently contains the set $S \subseteq U$, and let $q \in U$ 
-be a query element.  Let $q^+ := \min\{s \in S \mid s \geq q \}$ and
-$q^- := \max\{s \in S \mid s < q \}$ be the 
+Thus, the worst-case complexity of the predecessor 
+searching problem has been settled. However, there is 
+still room for improvement: first, suppose we are 
+given the original set $S$ as a sorted array. Then,
+we may desire a data structure that requires 
+only \emph{sublinear} additional space and answers
+predecessor queries for $S$ in optimal time; second, 
+we may ask for a more nuanced guarantee on the query 
+time that could depend on the structure of $S$ or on 
+the relationship between the query element $q$ and 
+the set $S$. More concretely, suppose our data 
+structure currently contains the set $S \subseteq U$. 
+To model the structure of $S$, we write $\Delta_M$ 
+and $\Delta_m$ for the maximum and minimum distance 
+between any two consecutive elements of $S$.
+Furthermore, let $q \in U$ be the query element,  
+and write
+\[
+  q^+ := \min\{s \in S \mid s \geq q \}
+\]
+and
+\[
+q^- := \max\{s \in S \mid s < q \}
+\] 
+for the 
 successor and the predecessor of $q$ in $S$.
 Then, we have several ways to model the
 relationship between $S$ and $q$: 
-let $d(q, S) = \min\{|q - q^-|, |q - q^+|\}$ and 
-$D(q, S) = \max\{|q - q^-|, |q - q^+|\}$.
-We call $d(q,S)$ (respectively, $D(q,S)$) the \emph{short
-distance} (\emph{long distance}) between $q$ and $S$. 
-The distance $d(q, S)$ is small when $q$ is close to an 
-element of $S$, whereas $w - \log D(q, S)$
-is small when $q$ is far from at least one of $q^\pm$.
-Finally, we write $\Delta_M$ and $\Delta_m$ for the maximum 
-and minimum distance between two consecutive elements of $S$.
+let 
+\[
+d(q, S) = \min\big\{|q - q^-|, |q - q^+|\big\}
+\]
+and 
+\[
+D(q, S) = \max\big\{|q - q^-|, |q - q^+|\big\}.
+\]
+We call $d(q,S)$ the \emph{short distance} and 
+$D(q, S)$ the \emph{long distance} between $q$ and 
+$S$.
+The short distance $d(q, S)$ is small when $q$ is 
+close to an element of $S$, whereas $w - \log D(q, S)$
+is small when $q$ is far from either $q^+$
+or $q^-$. 
 
 In 2013, Bose~\etal~\cite{BoseDoDuHoMo13} described
 a word-RAM data structure for the dynamic predecessor
@@ -213,7 +254,7 @@ representing $S$.}
   $O(w - \log(q^+ - q^-))$. Our 
   proofs work even replacing $D(q, S)$ with $q^+ - q^-$, but 
   the difference is immaterial as $q^+ - q^-\leq 2D(q, S)$, and 
-  we like the duality with the previous bound better.} 
+  we find the duality with the previous bound more intuitive.} 
   $O\big(\log(w - \log D(q, S))\big)$, with 
   $O(n\log w)$ additional bits.
   \item We improve exponentially over the \emph{interpolation
@@ -250,9 +291,9 @@ We use $\log x$ to denote the binary logarithm, and we set
 $\log x := 1$, for $x \leq 2$.
 We write $\eps$ for the empty string. For $k \in \N$, we denote by 
 $\{0, 1\}^k$ the set of all binary strings of length $k$, by 
-$\{0,1\}^+ = \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
+$\{0,1\}^+ := \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
 nonempty finite binary strings, and by 
-$\{0,1\}^* = \{0, 1\}^+ \cup \{\eps\}$ the set of all finite binary 
+$\{0,1\}^* := \{0, 1\}^+ \cup \{\eps\}$ the set of all finite binary 
 strings. The length of $q \in \{0, 1\}^*$ is denoted by $|q|$.
 For a string $q \in \{0, 1\}^*$ and $a, b \in \N$ with $a \leq b$, 
 we write $q[a, b]$ for the substring of $q$ starting at position
@@ -273,12 +314,7 @@ not exist.
 
 \paragraph{The Word RAM.}
 Let $w \in \N$ be a power of two. We work in the standard word RAM 
-model with word-length $w$. We assume that our word RAM can multiply
-two $w$-bit words in constant time, and we adopt the full 
-randomness assumption for hashing~\wolfgang{Reference?}. Note, 
-however, that these two assumptions are only needed for an 
-efficient implementation of our hash maps (see below);
-for the rest, our algorithms do not depend on them.
+model with word-length $w$. 
 \wolfgang{Add something about the mcb operation?}
 
 \paragraph{Predecessor and Successor Queries.}
@@ -323,15 +359,17 @@ worst-case, the bounds for the updates hold with
 high probability.\qed
 \end{theorem}
 
+\wolfgang{TO CHECK: Do we need the full-randomness assumption in 
+Theorem 2.1? Check about multiplication?}
 
 \wolfgang{Cite a specific theorem for this, similar to 
   Theorem~\ref{thm:succinct_retrieval_only_hashtable}?}
+\wolfgang{Check whether we actually need the following? Is the
+$O(n \log w)$ overhead from Theorem 2.1 enough?}
 We assume to be able to store a constant-time $r$-bit function on 
 $n$ keys using $rn+cn +o(n)$ bits, for some constant $c\geq 0$: the 
 function may return arbitrary values outside of its domain (for 
 practical implementations see~\cite{BelazzouguiBoPaVi11}).
-
-
 
 \section{Z-fast Tries} 
 
