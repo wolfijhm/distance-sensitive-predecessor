@@ -153,12 +153,12 @@ Here, $n$ denotes the current size of the
 structure is now commonly known as the 
 \emph{van-Emde-Boas tree}~\cite{CormenLeRiSt09}.
 
-For the \emph{pointer machine} model of computation, 
+For the \emph{pointer-machine} model of computation, 
 which is more restrictive than the word-RAM, it has 
 been known for a long time that a variant of the 
 van-Emde-Boas tree provides optimal 
 performance~\cite{MehlhornNaAl88,Mulzer09}.
-For the word RAM, \Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
+For the word-RAM, \Patrascu and Thorup~\cite{PatrascuTh06,PatrascuTh07} 
 recently showed that structures similar to the 
 van-Emde-Boas tree (e.g., $y$-fast tries~\cite{Willard83}) 
 with query time $O(\log w)$ are optimal, assuming that 
@@ -168,11 +168,13 @@ size of $S$. More generally, the lower bound of
 encompasses several regimes, depending on the 
 space that is available for the data structure.
 For instance, another case is realized by exponential 
-trees~\cite{AnderssonTh07}.\wolfgang{Which case is this?} 
+trees~\cite{AnderssonTh07}.\wolfgang{Which case is this?
+Provide more details?} 
 For a comprehensive discussion of the literature, we refer
 the reader to Mihai \Patrascu's thesis~\cite{Patrascu08}.
 
-Thus, the worst-case complexity of the predecessor 
+Thus, it is fair to say that by now, 
+the worst-case complexity of the predecessor 
 searching problem has been settled. However, there is 
 still room for improvement: first, suppose we are 
 given the original set $S$ as a sorted array. Then,
@@ -220,68 +222,79 @@ In 2013, Bose~\etal~\cite{BoseDoDuHoMo13} described
 a word-RAM data structure for the dynamic predecessor
 problem that is \emph{local} with respect to updates
 and queries.
-In particular, their structure can answer predecessor 
+More precisely, their structure can answer predecessor 
 and successor queries and perform updates 
-in $O\big(\log\log d(q, S)\big)$ time.
-It requires $O\big(n w \log\log w)$ bits 
+in $O(\log\log d(q, S))$ time.
+In a sense, this bound interpolates between
+the $O(1)$ time of a hash table (for the
+case that $q \in S$), and the $O(\log w)$ 
+time of a van-Emde-Boas tree (if $q$ is far from
+any element in $S$).
+The structure of Bose~\etal~requires $O\big(n w \log\log w)$ bits 
 of space, where $n = |S|$ is the size of the 
-current set. Bose~\etal apply their structure 
-to obtain a fast data structure for approximate nearest 
-neighbor queries in low dimensions and for answering
-dominance and range searching queries on a grid~\cite{BoseDoDuHoMo13}.
-
+current set. Bose~\etal~apply their structure in 
+the context of computational geometry; 
+namely for approximate nearest 
+neighbor queries in low dimensions and for 
+dominance and range searching on a grid~\cite{BoseDoDuHoMo13}.
 Here, we describe data structures for the
 static and dynamic predecessor problem
-on the word RAM that provide significant 
+on the-word RAM that provide significant 
 improvements over previous bounds.\footnote{Our 
-space bounds are always given as
+space bounds are always given as the
 number of bits \emph{in addition} to those needed for 
 representing $S$.} 
 
 \begin{enumerate}
   \item We match the static worst-case search time 
-  $O\big(\log\log d(q, S)\big)$
+  $O(\log\log d(q, S))$
   of Bose~\etal~\cite{BoseDoDuHoMo13}, but our index requires 
   just $O(n\log w)$ additional bits of space (and thus overall 
   linear space).
   \item Using $O(nw)$ bits, we can also match the dynamic
-  update and search time $O\big(\log\log d(q, S)\big)$
+  update and search time $O(\log\log d(q, S))$
   of Bose~\etal~\cite{BoseDoDuHoMo13}.
-  \item We improve exponentially over the \emph{interval-biased search
+  \item 
+  \wolfgang{Make reference more precise?}
+  We improve exponentially over the \emph{interval-biased search
   trees} of Bille~\etal~\cite{BilleLaRaSaSaWe15}, answering 
-  predecessor queries in time\footnote{The
-  bound of Bille~\etal~\cite{BilleLaRaSaSaWe15} is 
-  $O(w - \log(q^+ - q^-))$. Our 
-  proofs work even replacing $D(q, S)$ with $q^+ - q^-$, but 
-  the difference is immaterial as $q^+ - q^-\leq 2D(q, S)$, and 
+  predecessor queries in time\footnote{Bille~\etal~\cite{BilleLaRaSaSaWe15} 
+  state a bound of $O(w - \log(q^+ - q^-))$. Our 
+  proofs work also work when replacing $D(q, S)$ with $q^+ - q^-$, but 
+  the difference is immaterial, as $q^+ - q^-\leq 2D(q, S)$. We state
+  our bound as above, since
   we find the duality with the previous bound more intuitive.} 
-  $O\big(\log(w - \log D(q, S))\big)$, with 
+  $O(\log(w - \log D(q, S)))$, with 
   $O(n\log w)$ additional bits.
   \item We improve exponentially over the \emph{interpolation
   search} of Demaine~\etal~\cite{DemaineJoPa04}, answering
   predecessor queries in time 
-  $O\left(\log\log(\Delta_M / \Delta_m)\right)$, with
+  $O(\log\log(\Delta_M / \Delta_m))$, with
   $O(n\log w)$ additional bits.
-  \item Finally, with slightly more (but still sublinear) space 
+  \item Finally, with slightly more (but still sublinear) space,
   we can exploit a \emph{finger} $r \in S$ to speed up our third 
   result to $O\left(\log(\log|q - r| - \log D(q, S))\right)$, which is in
   some cases better than the bound reported
   by Andersson and Thorup~\cite{AnderssonTh07}, and improves 
   exponentially over interval-biased search trees, which need 
   time  
-  $O\left(\log(2^w - y) - \log D(q, S)\right)$~\cite{BilleLaRaSaSaWe15}.
+  $O\left(\log(2^w - r) - \log D(q, S)\right)$~\cite{BilleLaRaSaSaWe15}.
+  \wolfgang{Make reference more precise?}
 \end{enumerate}
 We remark that a combination of the first
 and the third result shows that static predecessor 
 search can be performed in time  
-$O\left(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\}\right)$ 
-with $O(n \log w)$ additional bits. Our 
-results are obtained starting from a refined version of
-\emph{fat binary search in a $z$-fast trie}~\cite{BelazzouguiBoPaVi09} 
-in which the initial search interval can be specified under 
-suitable conditions, confirming the intuition that fat
+$O(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\})$ 
+with $O(n \log w)$ additional bits. 
+\wolfgang{Expand on the next sentence? Say more about fat binary search?}
+Our 
+results are obtained by starting from a refined version of
+\emph{fat binary search in a $z$-fast trie}~\cite{BelazzouguiBoPaVi09}.
+The idea is that
+he initial search interval can be specified under 
+suitable conditions. This confirms the intuition that fat
 binary search can be used as a very versatile building block 
-for data structures.
+for obtaining new data structures.
 
 \section{Notation and Tools}
 \label{sec:notation}
@@ -294,7 +307,8 @@ $\{0, 1\}^k$ the set of all binary strings of length $k$, by
 $\{0,1\}^+ := \bigcup_{k = 1}^{\infty} \{0, 1\}^k$ the set of all
 nonempty finite binary strings, and by 
 $\{0,1\}^* := \{0, 1\}^+ \cup \{\eps\}$ the set of all finite binary 
-strings. The length of $q \in \{0, 1\}^*$ is denoted by $|q|$.
+strings, including the empty string. 
+The length of $q \in \{0, 1\}^*$ is denoted by $|q|$.
 For a string $q \in \{0, 1\}^*$ and $a, b \in \N$ with $a \leq b$, 
 we write $q[a, b]$ for the substring of $q$ starting at position
 $a$ and ending at position $b$.  The indices start from $0$. 
@@ -309,21 +323,27 @@ Given a string
 $q \in \{0,1\}^+$, we denote with $q + 1$ and $q - 1$ the strings in 
 $\{0, 1\}^{|q|}$ that come before and after $q$ in lexicographic 
 order. We use the convention that $0^k - 1 = 1^k + 1 = \bot$, for 
-$k \in \N$, since then the predecessor and the successor do 
-not exist. 
+$k \in \N$, since then the predecessor of $0^k$ and the successor
+of $1^k$ do not exist. 
 
 \paragraph{The Word RAM.}
 Let $w \in \N$ be a power of two. We work in the standard word RAM 
-model with word-length $w$. 
-\wolfgang{Add something about the mcb operation?}
+model with word-length $w$. This means that our data is given
+as a linear sequence of $w$-bit words from $\{0, 1\}^w$, 
+and that we can access each
+data word in constant time, given its address. Also,
+standard opertions involving two $w$-bit words
+can be performed in constant time.
+\wolfgang{Which operations do we need exactly?
+Just very basic ones? Only AC(0) operations? Multiplication?}
 
 \paragraph{Predecessor and Successor Queries.}
-Given a set $S \subseteq \{0, 1\}^w$ of $n$ binary strings of 
-length $w$, we consider $S$ to be ordered according to the 
+We are given a set $S \subseteq \{0, 1\}^w$ of $n$ binary strings of 
+length $w$. We consider $S$ to be ordered according to the 
 lexicographic order, and for $q \in \{0, 1\}^w$, we set
 \begin{align*}
-     q^- &= \max \{r \in S \mid r < q\} && 
-        \text{(the \emph{predecessor} of $q$ in $S$)} \\
+     q^- &= \max \{r \in S \mid r < q\},  && 
+        \text{(the \emph{predecessor} of $q$ in $S$), and} \\
      q^+ &= \min \{r \in S \mid r \geq q\?\} && 
        \text{(the \emph{successor} of $q$ in $S$)}.
 \end{align*}
@@ -344,9 +364,8 @@ hashing. In particular, we will maintain several
 succinct hash tables that store additional
 information for supporting fast queries.
 For this, we will use a hash table described
-by Demaine~\etal~\cite{DemaineMePaPa06}.
-The following theorem summarizes the properties
-of their data structure.
+by Demaine~\etal~\cite{DemaineMePaPa06}, whose
+properties are summarized in the following theorem:
 
 \begin{theorem}\label{thm:succinct_retrieval_only_hashtable}
 For any $r \geq 1$, there exists a dynamic dictionary that
@@ -375,32 +394,34 @@ practical implementations see~\cite{BelazzouguiBoPaVi11}).
 
 \subsection{Compressed Tries}
 Our data structure is based on \emph{compressed
-tries}~\cite{CormenLeRiSt09,Knuth98}. These are defined as
-follows: let $S \subseteq \{0, 1\}^w$. The \emph{trie} $T'$ for $S$ 
+tries}~\cite{CormenLeRiSt09,Knuth98}. 
+Let $S \subseteq \{0, 1\}^w$. The \emph{trie} $T'$ for $S$ 
 is a binary tree of height $w$. Each node $v \in T'$ corresponds
 to a bit string $e_v \in \{0,1\}^*$, called the \emph{extent} of $v$. 
 The root has extent $\eps$. For each inner node $v$, the left child 
 $u$ of $v$  has $e_u = e_v0$, and the right child $w$ of $v$ has 
 $e_w = e_v1$ (one of the two children may not exist). The extents of
-the leaves correspond to the elements of $S$, and the extents of the 
-inner nodes are prefixes for the elements in $S$, see 
+the leaves in $T'$ correspond to the elements of $S$, and the extents of the 
+inner nodes are prefixes for the elements in $S$; see 
 Figure~\ref{fig:trie}.
 
 \begin{figure}
   \centering
   \includegraphics{trie}
   \caption{A trie (left) and a compressed trie (right) for the set 
-  000, 100, 110, 111. The longest common prefix of 101 is  10. The 
+  000, 100, 110, 111. The nodes are annotated with their
+  extents. The longest common prefix of 101 is  10. The 
   lca of 101 in the compressed trie
     is the node labeled 1.}
   \label{fig:trie}
 \end{figure}
 
 The \emph{compressed trie} $T$ for $S$ is obtained
-from $T'$ by contracting each maximal path of nodes
-with only one child into a single edge. 
+from $T'$ by contracting into a single edge each maximal path in $T'$ that
+has only nodes with exactly one child.
 The root of $T$ is corresponds to the highest node of $T'$ that has 
-two children.  Each inner node in $T$ has exactly two children. 
+two children.  Every inner node in $T$ has exactly two children,
+and $T$ has $n$ leaves. 
 Consequently, $T$ has $O(n)$ nodes. 
 The extents of the nodes in $T$ are given by the longest 
 extents along the corresponding compressed paths.
