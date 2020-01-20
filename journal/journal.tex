@@ -423,14 +423,6 @@ The root of $T$ is corresponds to the highest node of $T'$ that has
 two children.  Every inner node in $T$ has exactly two children,
 and $T$ has $n$ leaves. 
 Consequently, $T$ has $O(n)$ nodes. 
-The extents of the nodes in $T$ are given by the longest 
-extents along the corresponding compressed paths.
-%Maybe somewhat unusually, in the following, the 
-%\emph{height} and \emph{depth} of a node $v$ in $T$ 
-%will refer to the corresponding
-%height and depth in the (uncompressed) trie $T'$.
-%This convention will make the description of the operations more
-%convenient.
 
 Let $v$ be a nonroot-node in the compressed trie $T$,
 and suppose that $u$ is the parent of $v$ in $T$. Then, 
@@ -440,15 +432,20 @@ a bit that indicates whether $v$ is the left or the right child
 of $u$, and $c_v \in \{0, 1\}^*$ is called the \emph{compressed
 path} of $v$. Both $e_u$ and $c_v$ may be empty, but $e_u$
 can be empty only if $u$ is the root of $T$. 
-We call $n_v = e_ub$ the \emph{name} of $u$.
-For the root $v$, the extent $e_v$ may be empty, and we set
-the compressed path $c_v = e_v$. Also, we set $n_v = \eps$.
-We call an extent $e_v$ \emph{internal}, if $v$ is an internal
-node of $T$.
-For any node $v$ in $T$, the \emph{skip interval} of $v$ is 
+We call $n_v = e_ub$ the \emph{name} of $v$.
+Next, let $v$ be the root of $T$.
+In this case, we set the compressed path $c_v$
+to $e_v$, where the extent $e_v$ of the root may
+be empty.
+Furthermore, we set $n_v = \eps$.
+
+Let $v$ be any node of $T$.
+We call the extent $e_v$ 
+\emph{internal} if $v$ is an internal node of $T$.
+The \emph{skip interval} of $v$ is defined as
 $[1, |e_v|]$, if $v$ is the root, and $[|n_v|, |e_v|]$, otherwise.
-Given a string $q \in \{0, 1\}^*$, with $|q| \leq w$, the 
-\emph{exit node} of $q$, $\exit(q)$, is the unique node
+Given a string $q \in \{0, 1\}^*$ with $|q| \leq w$, the 
+\emph{exit node} of $q$, denoted as $\exit(q)$, is the unique node
 $v$ in $T$ such that $n_v$ is a prefix of $q$ and either
 $e_v = q$ or $e_v$ is not a prefix of $q$.
 Figure~\ref{fig:ztrie} illustrates these definitions.
@@ -465,12 +462,13 @@ $T$~\begin{tabular}{c}
 }
 \caption{(above) A compressed trie, the 
 related names, and the function $T$ of the associated 
-z-fast trie. The skip interval for $\alpha$ is $[7\..13]$. 
+z-fast trie. The skip interval for $\alpha$ is $[7, 14]$. 
 Dashed lines show the end of the handles of internal nodes.}
 \label{fig:ztrie}
 \end{figure}
 
 \subsection{Z-fast Tries and Fat Binary Search}
+
 We recall some key definitions from~\cite{BelazzouguiBoPaVi09}:
 
 \begin{definition}[2-fattest numbers and handles] 
@@ -487,30 +485,37 @@ is empty (which can happen only at the root), we set
 $h_v = \eps$.
 \end{definition}
 
-We remark that if $c$ is the 2-fattest number of $[a, b]$, it 
-is also the 2-fattest number in every subinterval of $[a, b]$ 
+We remark that if $c$ is the 2-fattest number of $[a, b]$, then 
+$c$ is also the 2-fattest number in every subinterval of $[a, b]$ 
 that contains it.
 
 \begin{definition}[z-fast trie]
-Let $S \subseteq \{0, 1\}^w$ be given, and let $T$ be the 
+Suppose we are given a set $S \subseteq \{0, 1\}^w$. Let $T$ be the 
 compressed trie for $S$. The \emph{z-fast trie on $S$} is 
-the function $Z : \{0, 1\}^* \rightarrow \{0, 1\}^*$ which 
-has $Z(h_v) = e_v$, for each internal node $v$ of $T$, and 
-which maps any other string to an arbitrary internal extent
+a function $Z : \{0, 1\}^* \rightarrow \{0, 1\}^*$ such that 
+$Z(h_v) = e_v$, for every internal node $v$ of $T$, and such
+that any other string is mapped to an arbitrary internal extent
 of $T$.
 \end{definition}
 
-Given the z-fast trie $Z$, we can determine very quickly
-the name of the exit node for any query string $q \in \{0,1\}^+$.
+Given a z-fast trie $Z$ for $S$, we can determine very 
+quickly the name of the exit node for any query string $q \in \{0,1\}^+$.
 For this, we use a variant of binary search, called 
-\emph{fat binary search} see Algorithm~\ref{algo:query}. 
-The algorithm locates the longest internal extent $e$ that is a 
-proper prefix of $q$. For $e$, the name of $\exit(q)$ is obtained as
-$q[0, |e| + 1]$. Given an initial search interval $[a,b]$, the 
-fat binary search repeatedly splits it on its 2-fattest number, 
-rather than on its midpoint. This makes the search order more
-predictable among different starting intervals and thus allows 
-for effective preprocessing.
+\emph{fat binary search}.
+The goal is to find the length $|e|$ of the 
+longest internal extent $e$ that is a proper 
+prefix of $q$. One $|e|$ is known, the name 
+of $\exit(q)$ is obtained as $q[0, |e| + 1]$.
+The fat binary search is started with an initial
+search interval $[a,b]$ that is guaranteed
+to contain $|e|$. The main difference to
+a standard binary search is that we do
+not split the search interval on its
+midpoint, but on its 2-fattest number.
+This makes the search order more
+predictable among different initial search intervals 
+and thus allows for effective preprocessing in $Z$.
+See Algorithm~\ref{algo:query} for details. 
 The algorithm reported here, an extension of the 
 result from~\cite{BelazzouguiBoVi10}, has two main features:
 it imposes very weak requirements on $Z$, and it allows us to start 
