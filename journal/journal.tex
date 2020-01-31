@@ -504,29 +504,35 @@ For this, we use a variant of binary search, called
 \emph{fat binary search}.
 The goal is to find the length $|e|$ of the 
 longest internal extent $e$ that is a proper 
-prefix of $q$. One $|e|$ is known, the name 
-of $\exit(q)$ is obtained as $q[0, |e| + 1]$.
+prefix of $q$. Once $|e|$ is known, the name 
+of $\exit(q)$ is obtained as $q\big[0, |e| + 1\big]$.
 The fat binary search is started with an initial
 search interval $[a,b]$ that is guaranteed
 to contain $|e|$. The main difference to
 a standard binary search is that we do
 not split the search interval on its
 midpoint, but on its 2-fattest number.
-This makes the search order more
-predictable among different initial search intervals 
-and thus allows for effective preprocessing in $Z$.
-See Algorithm~\ref{algo:query} for details. 
+Furthermore, we maintain the invariant
+that the left endpoint of the search interval $a$ 
+is the length of an internal extent
+of $T$.  This makes the search order more
+predictable: all the decision points of the
+fat binary search are contained in the z-fast trie
+and are readily available after preprocessing.
+See the pseudo-code in Algorithm~\ref{algo:query} for details. 
 The algorithm reported here, an extension of the 
 result from~\cite{BelazzouguiBoVi10}, has two main features:
 it imposes very weak requirements on $Z$, and it allows us to start 
-the search on a small interval. The latter feature will be the key 
-in obtaining our main results.
+the search on a small interval that is subject to
+mild conditions. The latter feature will be crucial 
+for our main results.
 
 \begin{algorithm}
-\KwIn{a string $q \in \{0,1\}^+$, an integer $a \in [0, |q|]$
-such that $a = 0$ or $q[0, a - 1]$ is an internal extent of $T$, and
-an integer $b \in [a, |q|]$ larger than the length of the longest 
-internal extent of $T$ that is a proper prefix of $q$}
+\KwIn{a string $q \in \{0,1\}^+$, an initial 
+search interval $[a,b]$ so that  $a \in [0, |q|]$
+and $a = 0$ or $q[0, a - 1]$ is an internal extent of $T$, and
+so that $b \in [a, |q|]$ and $b$ is larger than the length 
+of the longest internal extent of $T$ that is a proper prefix of $q$}
 \KwOut{the name of $\exit(q)$}
 \While{$b - a > 1$}{%
 $c \gets $ the 2-fattest number in $[a + 1, b - 1]$\;
@@ -552,47 +558,54 @@ $b \gets c$\;
 \end{algorithm}
 
 \begin{lemma}\label{lem:correctness}
+Let $q \in \{0, 1\}^+$ be a query string.
 Let $e_0 = \eps$ and $e_1, e_2, \dots, e_t$ be the internal 
 extents of $T$ that are \emph{proper} prefixes of $q$, ordered by 
-increasing length.  Let $[a, b]$ be the interval maintained by 
+increasing length.  Let $[a, b]$ be the search interval maintained by 
 Algorithm~\ref{algo:query}. Before and after each iteration, the 
 following invariants are satisfied: 
 \begin{enumerate}
     \item\label{enu:lema} $a = |e_j|$, for some $j$;
-    \item\label{enu:lemb} $|e_t|< b$.
+    \item\label{enu:lemb} $b > |e_t|$.
 \end{enumerate}
-Thus, at the end of the loop, $a = |e_t|$.
+It follows that when the algorithm terminates, we have, $a = |e_t|$.
 \end{lemma}
 
 \begin{proof}
-We begin with invariant (\ref{enu:lema}).
-By assumption, the condition $a = |e_j|$, for some $j$, holds
-initially. The condition is maintained whenever
-$a$ is assigned a new value in line~\ref{alg1:reass1}. 
-Indeed, suppose that currently $a = |e_j|$, for some $j$, and
-that line~\ref{alg1:reass1} is reached. Then, since $e$ is an 
-internal extent, since $|e_j| = a  < c  \leq |e|$, 
-and since $e \prec q$, it follows that $e = e_k$, for some $k > j$.
+Consider invariant (\ref{enu:lema}).
+At the beginning, the invariant holds
+by our assumption on the initial search interval. 
+Moreover, the invariant is maintained throughout
+the algorithm. Indeed, the value of
+$a$ changes only in line~\ref{alg1:reass1} of Algorithm~\ref{algo:query}. 
+Suppose that currently we have $a = |e_j|$, for some $j$, and
+that line~\ref{alg1:reass1} is executed. Then, we know that $e$ is an 
+internal extent, that $|e_j| = a  < c  \leq |e|$, 
+and that $e \prec q$. Thus, it follows that $e = e_k$, 
+for some $k > j$.
 
-Next, we consider invariant (\ref{enu:lemb}).
-By assumption, the condition $|e_t| < b$ holds initially.
+Next, consider invariant (\ref{enu:lemb}).
+At the beginning, the invariant holds 
+by our assumption on the initial search interval.
 To show that the invariant is preserved,
-suppose that at the beginning of an iteration of the
-\textbf{while}-loop, we have $|e_t| < b$.
-By invariant (\ref{enu:lema}), $a = |e_j|$, for some $j$.  
+note that $b$ changes only in line
+line~\ref{alg1:reass2}.
+By invariant (\ref{enu:lema}), at the beginning of
+an iteration of the \textbf{while}-loop, we have $a = |e_j|$, 
+for some $j$.  
 Let $v_{j+1}, \dots, v_{t}$ be the inner nodes in $T$ 
 with $e_{v_k} = e_k$, for $k = j + 1, \dots, t$.
 Then, the skip intervals of $v_{j+1}, \dots, v_t$ are 
 pairwise disjoint, and their union is $[a + 1, |e_t|]$.
-If $c \leq |e_t|$, then $c$ lies in the
+Thus, if $c \leq |e_t|$, then $c$ lies in the
 skip interval of some $v_k$.
 Since $c$ is 2-fattest in $[a + 1, b - 1]$, 
 it is also 2-fattest in the skip interval of $v_k$. 
 Hence, we have $q[0, c - 1] = h_{v_k}$ and 
 $Z(q[0, c - 1]) = e_k$, 
 which satisfies $c \leq |e_k|$ and $e_k  \prec q$. 
-Thus, line~\ref{alg1:reass2} is executed only if $|e_t| < c$.
-The invariant $|e_t| < b$ is preserved.
+Thus, line~\ref{alg1:reass2} is executed only if $c > |e_t|$.
+The invariant $b > |e_t|$ is preserved.
 \end{proof}
 
 \begin{theorem}
