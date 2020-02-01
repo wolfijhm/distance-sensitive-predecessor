@@ -327,15 +327,25 @@ $k \in \N$, since then the predecessor of $0^k$ and the successor
 of $1^k$ do not exist. 
 
 \paragraph{The Word RAM.}
-Let $w \in \N$ be a power of two. We work in the standard word RAM 
+Let $w \in \N$ be a power of two. We work in the word RAM 
 model with word-length $w$. This means that our data is given
 as a linear sequence of $w$-bit words from $\{0, 1\}^w$, 
 and that we can access each
 data word in constant time, given its address. Also,
 standard opertions involving two $w$-bit words
 can be performed in constant time.
-\wolfgang{Which operations do we need exactly?
-Just very basic ones? Only AC(0) operations? Multiplication?}
+These operations include 
+bit-wise operations such as \texttt{and}, \texttt{or}, 
+\texttt{not}, etc., arithmetic operations
+such as \texttt{add}, \texttt{sub}, \texttt{mod}, and
+shifting operations such as \texttt{shl}, \texttt{shr}.
+In addition, we make use of two more operations:
+\texttt{msb} and \texttt{lsb} to obtain the index of the
+most significant and the least signifiant non-zero bit
+in a given $w$-bit word.
+\wolfgang{
+Say something about $\text{AC}_0$. Do we need 
+multiplication for hashing?}
 
 \paragraph{Predecessor and Successor Queries.}
 We are given a set $S \subseteq \{0, 1\}^w$ of $n$ binary strings of 
@@ -498,6 +508,11 @@ that any other string is mapped to an arbitrary internal extent
 of $T$.
 \end{definition}
 
+\wolfgang{I have a small issue with the implementation:
+our model works with $w$-bit words, but the z-fast trie
+returns bit strings of potentially smaller length.
+How exactly are they represented? Do we use two $w$-bit
+words, one representing the length? Should we explain?}
 Given a z-fast trie $Z$ for $S$, we can determine very 
 quickly the name of the exit node for any query string $q \in \{0,1\}^+$.
 For this, we use a variant of binary search, called 
@@ -505,7 +520,7 @@ For this, we use a variant of binary search, called
 The goal is to find the length $|e|$ of the 
 longest internal extent $e$ that is a proper 
 prefix of $q$. Once $|e|$ is known, the name 
-of $\exit(q)$ is obtained as $q\big[0, |e| + 1\big]$.
+of $\exit(q)$ is obtained as $q\big[0, |e|\big]$.
 The fat binary search is started with an initial
 search interval $[a,b]$ that is guaranteed
 to contain $|e|$. The main difference to
@@ -524,8 +539,9 @@ The algorithm reported here, an extension of the
 result from~\cite{BelazzouguiBoVi10}, has two main features:
 it imposes very weak requirements on $Z$, and it allows us to start 
 the search on a small interval that is subject to
-mild conditions. The latter feature will be crucial 
-for our main results.
+mild conditions. This latter feature will be crucial 
+for our main results. The next lemma formally states
+the invariant of the fat binary search.
 
 \begin{algorithm}
 \KwIn{a string $q \in \{0,1\}^+$, an initial 
@@ -588,7 +604,7 @@ Next, consider invariant (\ref{enu:lemb}).
 At the beginning, the invariant holds 
 by our assumption on the initial search interval.
 To show that the invariant is preserved,
-note that $b$ changes only in line
+note that $b$ changes only in 
 line~\ref{alg1:reass2}.
 By invariant (\ref{enu:lema}), at the beginning of
 an iteration of the \textbf{while}-loop, we have $a = |e_j|$, 
@@ -608,6 +624,7 @@ Thus, line~\ref{alg1:reass2} is executed only if $c > |e_t|$.
 The invariant $b > |e_t|$ is preserved.
 \end{proof}
 
+We can now show that our fat binary search is correct.
 \begin{theorem}
 \label{thm:correctnessfbs}
 Algorithm~\ref{algo:query} takes at most $\lceil\log(b-a)\rceil$
@@ -616,50 +633,57 @@ and finds the name of $\exit(q)$.
 \end{theorem}
 
 \begin{proof}
-We first bound the number of iterations. Let 
-$[\ell, r]$ be an interval that contains at most one multiple of 
-$2^i$, and let $c$ be the 2-fattest number in $[\ell, r]$. Then, 
-the two subintervals $[\ell, c - 1]$ and $[c + 1, r]$ each contain 
-at most one multiple of $2^{i-1}$: if one interval contained two such 
-multiples, it would also contain a multiple of $2^i$
-in the interior, contradicting our assumption.
-By induction, it follows that after splitting
-at most $i$ times, the resulting interval has length at most one. 
+We first bound the number of iterations. Consider
+an interval $[\ell, r]$ and suppose that
+$[\ell, r]$ contains at most one multiple
+of $2^i$. Furthermore, let $c$ be the 
+$2$-fattest number in $[\ell, r]$.
+Then, the two subintervals $[\ell, c - 1]$ and 
+$[c + 1, r]$ each contain at most one multiple 
+of $2^{i-1}$. Indeed, if one subinterval 
+contained two such multiples, it would also 
+contain a multiple of $2^i$ in its interior. 
+However, this mutiple would have to be $c$, 
+since $[\ell, r]$ contains no other multiple 
+of $2^i$, a contradiction. It now follows 
+by induction that after splitting the 
+interval $[\ell, r]$ at most $i$ times, the 
+resulting interval has length at most one. 
 Now, since an interval of length $k$ contains at most one multiple of 
 $2^{\lceil\log k\rceil}$, the algorithm
 has at most $\lceil\log(b-a)\rceil$ iterations.
 
-Finally, if $t > 0$ then $q[0, |p_t|]$ is the name of $\exit(q)$.
-Otherwise, $\exit(q)$ is the root (hence the special case in 
-Algorithm~\ref{algo:query}).
+It remains to argue correctness. 
+By Lemma~\ref{lem:correctness}, we know
+that if the algorithm terminates, then
+$a = |e|$, where $e$ is the longest internal
+extent of $T$ that is a proper prefix of $q$,
+or $a = 0$, if no such internal extent exists. If $a > 0$ 
+then $q[0, a]$ is the name of $\exit(q)$.
+If $a = 0$, there may be two 
+reasons for this: (a) there is no internal
+extent that is a proper prefix of $q$. In this case,
+the extent of the root must be non-empty, and
+$\exit(q)$ is the root; or (b) the longest internal
+extent that is a proper prefix of $q$ is $\eps$.
+In this case, this extent is located at the root, and 
+$\exit(q)$ is the child of the root
+that corresponds to the first bit
+of $q$.
+All these cases are handled by the
+final case distinction in Algorithm~\ref{algo:query}.
 \end{proof}
 
-To find the 2-fattest number in an interval $[\ell + 1, r]$, for 
-nonnegative integers $\ell < r$, we need 
-an \texttt{msb}-operation.\footnote{More precisely, the 
-2-fattest number in $[\ell, r]$ is 
+We comment on some implementation aspects of 
+Algorithm~\ref{algo:query}.
+First, the 2-fattest
+number in an interval $[\ell, r]$ with $\ell \leq r$
+can be found in constant time by 
 $(1^w \texttt{ shl } 
-\texttt{msb}(\ell \texttt{ xor } r)) \texttt{ and } r$. 
-We write the interval boundaries as $[\ell +1 , r]$ instead of
-$[\ell, r]$, since this allows for the most convenient formulation
-of the operation.}
-However, there is an alternative that does not need the most 
-significant bit operation.  Starting from the interval $[\ell + 1, r]$
-we set $i = \lceil\log(r - \ell)\rceil$ (trivially, we can find $i$ 
-in time $O(\log(r -\ell))$).
-Then we check, for decreasing $i$, whether 
-$(1^w \texttt{ shl } i)\texttt{ and } \ell \neq 
- (1^w \texttt{ shl } i) \texttt{ and } r$: 
-when the condition is satisfied, there is exactly one multiple of 
-$2^i$ in the interval $[\ell + 1, r]$, 
-namely $c= r \texttt{ and }  (1^w \texttt{ shl } i)$, and
-$c$ is also 2-fattest for $[\ell + 1, r]$. This property is preserved 
-by splitting on $c$ and possibly shortening the resulting interval
-further (see the beginning of the proof of 
-Theorem~\ref{thm:correctnessfbs}). Hence, in the process of
-the algorithm, we can just continue decreasing $i$ and testing. 
-The total number of iterations is still at most 
-$\lceil\log(r-\ell)\rceil$.
+\texttt{msb}((\ell - 1) \texttt{ xor } r)) \texttt{ and } r$,
+where $1^w$ represents the $w$-bit word in which all bits
+are set to $1$. 
+
 
 \subsection{Implementing the Function $Z$}
 
