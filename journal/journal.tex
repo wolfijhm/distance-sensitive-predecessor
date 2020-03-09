@@ -251,7 +251,7 @@ representing $S$.}
   of Bose~\etal~\cite{BoseDoDuHoMo13}, but our index requires 
   just $O(n\log w)$ additional bits of space (and thus overall 
   linear space).
-  \item Using $O(nw)$ bits, we can also match the dynamic
+  \item Using $O(nw)$ bits, we can match the dynamic
   update and search time $O(\log\log d(q, S))$
   of Bose~\etal~\cite{BoseDoDuHoMo13}.
   \item 
@@ -821,198 +821,247 @@ implemented in $O(1)$ with additional $O(n\log w)$ bits of space.
 
 Now consider a query string $q \in \{0, 1\}^w$.
 By our discussion so far, we know that
-we can use fat binary search to quickly find the 
-(length of) the name of the exit node $\exit(q)$ of $q$. 
+with fat binary search, we can quickly find the 
+(length of) the name of the exit node of $q$, $\exit(q)$. 
 Now, we explain how we can use this
-information to find the predecessor of $q$ in $S$.
+information to find $q^-$, the predecessor of $q$ in $S$.
 Given $q$ and the length $t$ of the name of $\exit(q)$, 
-we denote by  $\pred(q, t)$ the index of the predecessor of 
-$q$ in the lexicographic order of $S$.
+we denote by  $\pred(q, t)$ the index of $q^-$
+in the sorted array $S$.
 
 \begin{lemma}
 Suppose that a range locator for $T$ is available.
-Let $q \in \{0, 1\}^w$ be a query string, and
-let $t$ be the length of the name of $\exit(q)$.
+Let $q \in \{0, 1\}^w$ be a query string and
+$t$ the length of the name of $\exit(q)$.
 Then, we can compute $\pred(q, t)$ with one 
 call to the range locator and with $O(1)$ additional
 steps.
 \end{lemma}
 \begin{proof}
-We check if $q \preceq \extent(q[0, t - 1])$, or if the first bit of 
+Since the name of $\exit(q)$ is given by $q[0, t - 1]$,
+we can use Lemma~\ref{lem:getextent} to compute
+the extent $\extent(q[0, t - 1])$ of $\exit(q)$.
+This needs one call to the range locator and $O(1)$ 
+additional steps.
+Then, we check if $q \preceq \extent(q[0, t - 1])$ or 
+if the first bit of 
 $q$ at which $q$ and $\extent(q[0, t-1])$ differ is a $0$. 
-This can be done in constant time.
-    the index of the predecessor of $q$ is $\rrange(\exit(q))-1$ ;
-  Otherwise, the index of the predecessor of $q$ is 
+This can be done in constant time, using the \texttt{msb}-function
+and appropriate bit-shifting operations..
+If so, the index of $q^-$ is $\lrange(\exit(q))-1$.
+Otherwise, the index of $q^-$ is 
     $\rrange(\exit(q))$.
 \end{proof}
-Given a string $q$ and the length $t$ of the name of $\exit(x)$, 
-we define the constant-time function $\pred(q, t)$
-as follows:
- We denote with $\fbs^-(q,a,b)$ the predecessor index computed by 
- running Algorithm~\ref{algo:query} (with inputs $q$, $a$, and $b$) 
- to obtain the name of $\exit(x)$ and then invoking $\pred$.
 
-
-\wolfgang{Make an observation with proof}
-We remark that the definition above implies that predecessor search
-(by means of $\fbs^-(q,0,|q|)$) is possible in time $O(\log w)$ 
-using an index of $O(n\log w)$ bits.
+We denote with $\fbs^-(q,a,b)$ the predecessor index computed by 
+running Algorithm~\ref{algo:query} (with inputs $q$, $a$, and $b$) 
+to obtain the name of $\exit(q)$ and then invoking $\pred(q, t)$.
+We remark that the definition above implies that 
+by evaluating $\fbs^-(q,0,|q|)$, we can find
+the predecessor $q^-$ of a given query string $q$ 
+in $O(\log w)$ time, using 
+$O(n\log w)$ bits in addition to the sorted array $S$.
 
 \subsection{Using the Range Locator to Check Prefixes}
 
-Given a set $P\subseteq \Pref(S)$, we want to check in constant time
-and little space that a prefix $p \in \{0, 1\}^*$ either belongs 
-to $P$, or is not a prefix of any string in $S$. Assume that we 
-have a function $f : P \rightarrow \N$ that finds for each
-$p\in P$ the length of the name of $\exit(p)$. 
+Let $P \subseteq \Pref(S)$ be a set of prefixes of $S$, and
+assume that we have a function $f : P \rightarrow \N$ that 
+returns for each $p \in P$ the length of the name of 
+$\exit(p)$.
+Given a candidate prefix $p \in \{0, 1\}^*$, we would like 
+to distinguish whether $p$ belongs 
+to $P$ or is not a prefix of any string in $S$.\footnote{Note
+that we make no claim for the case that $p$ belongs to
+$\Pref(S) \setminus P$.}
 Our key observation is that a range locator, combined with access 
-to the sorted array $S$, can be used to ``patch''
-$f$ so that it returns a special value $\bot$ outside of $\Pref S$:
-% \footnote{We remark
-% that we cannot claim that $f$ will return $\bot$ on elements 
-% outside of $P$,  unless they are not in $\Pref S$ either.} 
+to the sorted array $S$, can be used to extend 
+$f$ so that it returns a special value $\bot$ outside of $\Pref(S)$:
+
 \begin{theorem}
 \label{th:pref}
 Let $P \subseteq\Pref(S)$, and let $f: P \rightarrow \N$ be 
-a constant-time function mapping $p \in P$ to $|n_{\exit(p)}|$. 
-If access to the set $S$ and an additional
-constant-time range locator is available, we can extend 
+given by $f(p) = |n_{\exit(p)}|$, for $p \in P$.
+Suppose that $f$ can be computed in constant time,
+and that we have access to the sorted
+array $S$ and to a range-locator for $S$ that
+requires constant time.
+Then, we can extend 
 $f$ to a constant-time function $\widehat{f}: \{0, 1\}^* \rightarrow \N
 \cup \{ \bot \}$ such that $\widehat{f}(p)=|n_{\exit(p)}|$, for 
 all $p \in P$, and $\widehat{f}(p) = \bot$, for
-all $p \not\in\Pref S$.
+all $p \not\in\Pref(S)$.
 \end{theorem}
-\begin{proof}
 
-To find $\widehat{f}(p)$ for a $p \in \{0, 1\}^*$, 
-we first compute the candidate length $t = f(p)$ of the name of 
-$\exit(p)$. Then, if $t \leq |p|$, we use the presumed
-name $p[0, t -1]$ of $\exit(p)$ in order to compute 
-the extent $e$ of $\exit(p)$, as in Lemma~\ref{lem:extent}. Now, 
+\begin{proof}
+Given $p \in \{0, 1\}^*$, we invoke
+$f$ to compute a candidate length $t = f(p)$ 
+for $n_{\exit(p)}$.
+If $t > |p|$, we return $\bot$.
+Otherwise,  we use the presumptive
+name $p[0, t - 1]$ of $\exit(p)$ 
+in Lemma~\ref{lem:getextent} to compute 
+the extent $e$ of $\exit(p)$. Now, 
 if $p  \preceq e$, we return $f(p)$, otherwise we return $\bot$.
 
-Clearly, if $p\in P$, then $f(p) = |n_{\exit(p)}| \leq |p|$, and we
+If $p\in P$, then $f(p) = |n_{\exit(p)}| \leq |p|$, and we
 compute correctly the extent of $\exit(p)$, so we return 
 $f(p)=|n_{\exit(p)}|$.
-On the other hand, if $p \not\in \Pref S$, then the test if 
-$p \preceq e$ must fail for every possible extent. 
-Hence, last step certainly returns $\bot$.
+If $p \not\in \Pref(S)$, then the test if 
+$p \preceq e$ must fail for every extent in $T$. 
+Hence, in this case, last step returns $\bot$.
+\footnote{Observe that actually $\hat f$ will return the length 
+of the name of the exit node for all prefixes in a set $\hat P$ that 
+satisfies $P\subseteq \hat P\subseteq\Pref(S)$.}
 \end{proof}
-
-% Observe that actually $\hat f$ will return the length of the name 
-%of the exit node for all prefixes in a set $\hat P$ that 
-%satisfies $P\subseteq \hat P\subseteq\Pref S$.
 
 \section{Locally Sensitive Predecessor Search}
 \label{sec:pred}
 
-We now combine Theorems~\ref{th:zfast} and~\ref{th:pref} to answer
-predecessor queries in a way that depends on the distance
-between the query string and its predecessor and successor in $S$. 
-The rest of this section is devoted at making the computation of the
-predecessor of $q$  more efficient by storing selected prefixes 
-of strings in $S$ 
+We combine Theorems~\ref{th:zfast} and~\ref{th:pref} 
+to answer predecessor queries in a time that depends 
+on the distance between the query string $q$ and its 
+predecessor and successor in $S$. The idea 
+is to store selected prefixes from $\Pref(S)$
 to reduce significantly the initial search interval of
-Algorithm~\ref{algo:query} (i.e., to increase the parameter $a$).
-It turns out that this pre-computation phase does dramatically reduce the number
-of steps required, making them depend on the distance between the query string
-$x$ and its predecessors and successors. 
-We will devise two
-distinct predecessor algorithms whose performance depend on the short and on the
-long distance between the query string and the queried set $S$:
-both algorithms use the setup described in Theorem~\ref{th:pref} but with a
-different choice of the function $f:P\to \N$. 
+Algorithm~\ref{algo:query} (by increasing the parameter $a$).
+We devise two distinct predecessor algorithms whose 
+performance depends on the short and on the
+long distance between the $q$ and $S$:
+both algorithms use the setup from Theorem~\ref{th:pref}, but with 
+different choices of the function $f:P\to \N$. 
 
-
-Before proceeding with the presentation of the algorithms, it is 
-worth observing the following lemmata:
-\begin{lemma}
-\label{lemma:hitpref}
-Let $q \in \{0, 1\}^w$, $j \leq w-\log d(q,S)$ and $p=q[0,j - 1]$. 
-Then either $p$ or $p+1$ or $p-1$ belong to $\Pref S$. 
-\end{lemma}
-
-\begin{proof}
-Suppose that neither $p$ nor $p+1$ nor $p-1$ belong to $\Pref S$; 
-there are $2^{w-j}$ strings prefixed by $p$ ($x$ being one of them), and the same is true
-of $p-1$ and $p+1$. So, the element $y \in S$ that minimises $|y-x|$ (that will be one
-of $x^-$ or $x^+$) is such that $|y-x|>2^{w-j}$. Hence $d(x,S)>2^{w-j}$, so
-$j>w-\log d(x,S)$, contradicting the hypothesis.
-\end{proof}
 \begin{lemma}
 \label{lemma:shortinprefs}
-Let $x$ be a string; if $p$ is a prefix of $x$ such that $p \in \Pref S$ and
-	$|p|>w-\log D(x,S)$, then $x$ is either smaller or larger than all the
-	elements of $S$ that have $p$ as prefix.
+Let $q \in \{0, 1\}^w$ be a query string,
+and let $p \in \Pref(S)$ with 
+$|p| > w - \log D(q,S)$ and
+$p \preceq q$. Then, 
+the elements in $S$ with prefix $p$
+are either all at most as large or all
+at least as large as $q$.
 \end{lemma}
+
 \begin{proof}
-Suppose that there is some prefix $p\in \Pref S$ of $x$ longer than $w-\log
-D(x,S)$ and that there are two elements of $S$ having $p$ as prefix and that
-are smaller and larger than $x$, respectively; in particular, $p$ is also a
-prefix of $x^+$ and $x^-$. Since $p$ is the prefix of less than $2^{\log D(x,S)}=D(x,S)$ strings, $x^+-x^-<D(x,S)$; but $x^+-x^-\geq D(x,S)$, so we have a contradiction.
+Since $|p| > w - \log D(q, S)$, we have
+that $p$ is a prefix of less than
+$2^{\log D(q,S)} = D(q, S)$ strings.
+From the definition of $D(q, S)$ it follows
+that $|q^+ - q^-| \geq D(q, S)$, so $p$
+cannot be a prefix of both $q^+$ and $q^-$.
+Now, since the set of strings in $S$ 
+with prefix $p$ forms an interval, all elements
+in $S$ with prefix $q$ are either all at most as large
+or all at least as large as $q$.
 \end{proof}
 
 \subsection{Short-distance predecessor algorithm}
 
-Our first improvement allows for the computation time to depend on short
-distances, using techniques inspired by~\cite{BoseDoDuHoMo13}. To this aim, let us
-consider the following set of prefixes:
+We use techniques inspired by the work of Bose 
+et al.~\cite{BoseDoDuHoMo13} to obtain a
+query time that depends on the short distance $d(q, S)$ 
+between the query $q$ and $S$. For this, we
+consider a sparse set $P$ of prefixes from which
+we can start the fat binary search.
+It is defined as follows:
 \[
-	P=\bigl\{\,x\bigl[0\..w-2^{2^i}\bigr) \mid x \in  S \text{ and }
-	i=0,1,\dots,\lfloor\log(\log w - 1)\rfloor\,\bigr\}.
+	P=\bigl\{\,s\bigl[0,w-2^{2^i} - 1\bigr] \mid s \in  S \text{ and }
+	i=0,\dots,\lfloor\log(\log w - 1)\rfloor\,\bigr\}.
 \]
-To store the function $f:P\to \N$ needed by Theorem~\ref{th:pref}, we define a subset of $P$:
+To store the function $f: P\to \N$ used in Theorem~\ref{th:pref}, 
+we define a subset of $P$:
 \[
-Q=\bigcup_{\text{node $\alpha$}}\min{}_\preceq\{\,p\in P\mid n_\alpha\preceq p\preceq e_\alpha\,\}
+Q=\bigcup_{\text{node $\alpha$ of $T$}}
+\min{}_\preceq\{\,p\in P\mid n_\alpha\preceq p\preceq e_\alpha\,\}
 \]
-In other words, for every node we take the shortest string in $P$ that sits between the name and the extent
-of the node (if any). We can map every element $q\in Q$ to $|n_{\exit q}|$ in space $O(n\log w)$ as $|Q|\leq n$.
-Then, we map every $p\in P$ to smallest $i$ such that $p[0\..w-2^{2^i})\in Q$.
-This map takes $O(n\log\log w\log\log\log w)=O(n\log w)$ bits. To compute $f(p)$, we first compute the index $i$ using 
-the second map, and then query the first map using $p\bigl[0\..w-2^{2^i}\bigr)$. 
+For every node $\alpha$ of $T$, the set $Q$ contains
+the shortest string in $P$ that sits between the name and the extent
+of $\alpha$ (if any). 
+By Theorem~\ref{thm:succinct_retrieval_only_hashtable},
+we can store a dictionary that maps every element 
+$q \in Q$ to $|n_{\exit(q)}|$ in space $O(n \log w)$ as $|Q|\leq n$.
+Furthermore, we can store another dictionary that maps
+every $p\in P$ to the smallest index $i$ such that 
+$p[0,w-2^{2^i} - 1]\in Q$.
+\wolfgang{What is the reference?}
+Since $|P| = O(n \log\log w)$,
+this map takes $O(n\log\log w\log\log\log w) = O(n\log w)$ bits. 
+To compute $f(p)$, we first find the index $i$ for $p$ in 
+the second map, and then we query the first map with 
+$p\bigl[0, w - 2^{2^i} -1\bigr]$. 
 
-Algorithm~\ref{algo:pred-short} probes prefixes of decreasing lengths in the set
-$X$. More precisely, at each step we will probe a prefix $p$ of length $t =
-w-2^{2^i}$ of the query string $x$; if this probe fails, then $p+1$ and finally
-$p-1$ are probed (if they exist). If we succeed in the first case, we have found
-a valid prefix of $x$ in the trie, and we can proceed with a fat binary search.
-Otherwise, no element is prefixed by $x$, and if by any chance an element is prefixed by $p-1$ or $p+1$ we can easily
-locate its predecessor.
-
+Now, our strategy is to 
+evaluate the function $f$ 
+with prefixes of the query string $q$ 
+of decreasing lengths.
+More precisely, at iteration $i$, we evaluate
+$f(p)$ with the prefix $p$ of $q$ with 
+length $t = w-2^{2^i}$. 
+If this succeeds, we have found a valid prefix of $q$ in $T$,
+and we can proceed with the fat binary search.
+If not, we evaluate for 
+$f(p+1)$ and for $f(p-1)$. If this succeeds, it is
+easy to find $q^-$ with the range locator.
+If none of our tests succeeds, we proceed to the next
+iteration $i+1$. See Algorithm~\ref{algo:pred-short} 
+for the details.
 \begin{algorithm}
-\KwIn{a nonempty string $x\in \{0, 1\}^w$}
-\KwOut{the index $i$ such that $S[i] = x^-$}
+\KwIn{a query string $q\in \{0, 1\}^w$}
+\KwOut{the index $j$ such that $S[j] = q^-$}
  $i \gets 0$\;
 \While{$2^{2^i} \leq w/2$}{%
-  $p \gets x\bigl[0\..w-2^{2^i}\bigr)$\;
-  $t \leftarrow \hat f(p)$\;
+  $p \gets q\bigl[0, w-2^{2^i} - 1\bigr]$\;
+  $t \leftarrow \widehat{f}(p)$\;
   \If{$t \neq \bot$ }{%
-       $e \gets \extent(x[0\..t))$\;
-       \If{$e\prec x$}{%
-           \Return{$\fbs^-(x,|e|,|x|)$}\;
+       $e \gets \extent(q[0,t-1])$\;
+       \If{$e\prec q$}{%
            \tcp{We found a long extent}
+           \Return{$\fbs^-(q,|e|,|q|)$}\;
        }
-       \Return{$\pred(x,t)$} 
-       \tcp{We exit at the node of name $x[0\..t)$}
+       \tcp{We exit at the node of name $q[0, t-1]$}
+       \Return{$\pred(q,t)$} 
   }
-  $t \gets \hat f(p+1)$
+  $t \gets \widehat{f}(p+1)$\;
   \If{$t \neq \bot$}{%
-    \Return $\lrange((p+1)[0\..t))-1$ 
-    \tcp{$x^-$ is the predecessor of $p+1$} 
+    \tcp{$q^-$ is the predecessor of $p+1$} 
+    \Return $\lrange((p+1)[0,t-1])-1$ 
   }
-  $t \leftarrow \hat f(p-1)$
+  $t \leftarrow \widehat{f}(p-1)$\;
   \If{$t \neq \bot$}{%
-    \Return $\rrange((p-1)[0\..t))$  
-    \tcp{$x^-$ is the successor of $p-1$} 
+    \tcp{$q^-$ is the successor of $p-1$} 
+    \Return $\rrange((p-1)[0,t-1])$  
   }
+  $i \gets i + 1$
 }
 \tcp{Standard search (we found no prefix long enough)}
-\Return{$\fbs^-(x,0,|x|)$}
+\Return{$\fbs^-(q,0,|q|)$}
 \caption{Short-distance speedup.}
 \label{algo:pred-short}
 \end{algorithm}
 
-More precisely, it turns out that:
+Before proceeding with the presentation of the algorithms, we
+observe two useful lemmas. The first lemma shows that we can
+use the short distance between a query string $q$ and the 
+set $S$ in order to find an appropriate starting prefix in $S$. 
+\begin{lemma}
+\label{lemma:hitpref}
+Let $q \in \{0, 1\}^w$ be a query string.
+Let $j \in \N$ with $j \leq w-\log d(q,S)$ be given, 
+and set $p=q[0,j - 1]$. 
+Then, at least one of $p$, $p+1$, or $p-1$ 
+belongs to $\Pref(S)$. 
+\end{lemma}
+
+\begin{proof}
+There are $2^{w-j}$ strings in $\{0, 1\}^w$
+with prefix $p$, ($q$ being one of them), and the same holds
+for $p - 1$ and $p + 1$. 
+Let $s$ be the string in $S$ that realizes
+$d(q, S)$, i.e., $s = q^-$ or $ s = q^+$.
+Then, by our assumption on $j$, we have $|q-s| \leq 2^{w-j}$, 
+so $s$ must have prefix either $p$ or $p + 1$ or $p-1$.
+\end{proof}
+
+
 \begin{theorem}
 Algorithm~\ref{algo:pred-short} returns the predecessor of $x$
 in time $O(\log\log d(x,S))$, and requires an index of $O(n \log w )$
@@ -1093,7 +1142,7 @@ search at the end of the loop will end within the prescribed time bounds.
 \end{proof}
 
 \begin{algorithm}
-\KwIn{a nonempty string $x\in 2^w$}
+\KwIn{a query string $q\in 2^w$}
 \KwOut{the index $i$ such that $S[i]=x^-$}
 
  $a \gets 0$\;
@@ -1116,6 +1165,7 @@ search at the end of the loop will end within the prescribed time bounds.
 }
 \Return{$\fbs^-(x,a,w)$}
 
+
 \caption{Long-distance speedup.}
 \label{algo:pred-long}
 \end{algorithm}
@@ -1128,6 +1178,8 @@ in time $O(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\})$, using an index that
 requires $O(n \log w)$ bits of space (in addition to the space
 needed to store the elements of $S$).
 \end{corollary}
+
+\subsection{Dynamic Version}
 
 \section{Globally sensitive predecessor search}
 
@@ -1247,6 +1299,59 @@ Lemma~\ref{lemma:shortinprefs}, $w-\log D(x,S)\geq (w+|e|)/2$; the fat binary se
 end takes time $O(\log (w-(a+|e|)))=O(\log (w-|e'|))=O(\log( w/2 -
 |e|/2)))=O(\log(w-|e|-\log D(x,S)))$, within the prescribed time bounds.
 \end{proof}
+
+\section{Applications}
+
+Bose~\etal~\cite{BoseDoDuHoMo13} describe how to combine their structure
+with a technique of Chan~\cite{Chan02} and random 
+shifting~\cite[Chapter~11]{HarPeled11} for obtaining a data structure for 
+distance-sensitive
+approximate nearest neighbor queries on a grid.
+More precisely, let $d \in \N$ be the fixed dimension, 
+$U = \{0, \dots, 2^{w}-1\}$ be the universe, and
+let $\eps > 0$ be given.
+The goal is to maintain a dynamic set $S \subseteq U^d$ under
+insertions, deletions, and \emph{$\eps$-approximate
+nearest neighbor queries}: given a query point $q \in U^d$,
+find a $p \in S$ with $d_2(p,q) \leq (1+\eps)d_2(p, S)$.
+Plugging our $\Delta$-fast tries into the structure of
+Bose~\etal~\cite[Theorem~9]{BoseDoDuHoMo13}, we can
+immediately improve the space requirement of their structure to linear:
+\begin{theorem}
+Let $U = \{0, \dots, 2^w-1\}$ and let $d$ be a constant.
+Furthermore, let $\eps > 0$ be given.
+There exists a data structure that supports $(1+\eps)$-approximate
+nearest neighbor queries over a subset $S \subseteq U^d$ in 
+$(1/\eps^d)\log\log \Delta)$ expected time and insertions and deletions
+of elements of $U^d$ in $O(\log\log \Delta)$ expected time.
+Here, $\Delta$ denotes the Euclidean distance between the query element
+and $S$. At any point in time, the data structure requires $O(n)$
+words of space, where $n  = |S|$.
+\end{theorem}
+
+As a second application, Bose~\etal~\cite{BoseDoDuHoMo13}
+present a data structure for dominance queries on a grid,
+based on a technique of Overmars~\cite{Overmars88}.
+Again, let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$,
+$|S| = n$ be given. The goal is to construct a data structure
+for \emph{dominance queries} in $S$. That is, given a query point
+$q \in U^2$, find all points $p$ in $S$ that \emph{dominate} $q$,
+i.e., for which we have $p_x \geq q_x$ and $p_y \geq q_y$, there
+$p_x$, $p_y$ and $q_x$, $q_y$ are the $x$- and $y$-coordinates 
+of $p$ and $q$.
+
+Again, using $\Delta$-fast tries, we can immediately improve the
+space requirement for the result of 
+Bose~\etal~\cite[Theorem~10, Corollary~13]{BoseDoDuHoMo13}.
+
+\begin{theorem}
+Let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$, $|S|=n$
+be given. There exists a data structure that reports the points in $S$
+that dominate a given query point $q = (a,b) \in U^2$ in expected time
+$O(\log\log(h+v) + k)$, where $h = 2^w - a$, $v = 2^2-b$, and $k$
+is the number of points in $S$ dominated by $q$.
+The data structure uses $O(n \log n)$ space.
+\end{theorem}
 
 \section{Delta-Fast Abstract}
 Let $w \in \N$ and $U = \{0, 1, \dots, 2^w-1\}$ be a 
@@ -1946,58 +2051,6 @@ successor of $q$ in the current set $S$. At any point in time,
 the data structure needs $O(n)$ words of space, where $n = |S|$.
 \end{theorem}
 
-\section{Applications}
-
-Bose~\etal~\cite{BoseDoDuHoMo13} describe how to combine their structure
-with a technique of Chan~\cite{Chan02} and random 
-shifting~\cite[Chapter~11]{HarPeled11} for obtaining a data structure for 
-distance-sensitive
-approximate nearest neighbor queries on a grid.
-More precisely, let $d \in \N$ be the fixed dimension, 
-$U = \{0, \dots, 2^{w}-1\}$ be the universe, and
-let $\eps > 0$ be given.
-The goal is to maintain a dynamic set $S \subseteq U^d$ under
-insertions, deletions, and \emph{$\eps$-approximate
-nearest neighbor queries}: given a query point $q \in U^d$,
-find a $p \in S$ with $d_2(p,q) \leq (1+\eps)d_2(p, S)$.
-Plugging our $\Delta$-fast tries into the structure of
-Bose~\etal~\cite[Theorem~9]{BoseDoDuHoMo13}, we can
-immediately improve the space requirement of their structure to linear:
-\begin{theorem}
-Let $U = \{0, \dots, 2^w-1\}$ and let $d$ be a constant.
-Furthermore, let $\eps > 0$ be given.
-There exists a data structure that supports $(1+\eps)$-approximate
-nearest neighbor queries over a subset $S \subseteq U^d$ in 
-$(1/\eps^d)\log\log \Delta)$ expected time and insertions and deletions
-of elements of $U^d$ in $O(\log\log \Delta)$ expected time.
-Here, $\Delta$ denotes the Euclidean distance between the query element
-and $S$. At any point in time, the data structure requires $O(n)$
-words of space, where $n  = |S|$.
-\end{theorem}
-
-As a second application, Bose~\etal~\cite{BoseDoDuHoMo13}
-present a data structure for dominance queries on a grid,
-based on a technique of Overmars~\cite{Overmars88}.
-Again, let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$,
-$|S| = n$ be given. The goal is to construct a data structure
-for \emph{dominance queries} in $S$. That is, given a query point
-$q \in U^2$, find all points $p$ in $S$ that \emph{dominate} $q$,
-i.e., for which we have $p_x \geq q_x$ and $p_y \geq q_y$, there
-$p_x$, $p_y$ and $q_x$, $q_y$ are the $x$- and $y$-coordinates 
-of $p$ and $q$.
-
-Again, using $\Delta$-fast tries, we can immediately improve the
-space requirement for the result of 
-Bose~\etal~\cite[Theorem~10, Corollary~13]{BoseDoDuHoMo13}.
-
-\begin{theorem}
-Let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$, $|S|=n$
-be given. There exists a data structure that reports the points in $S$
-that dominate a given query point $q = (a,b) \in U^2$ in expected time
-$O(\log\log(h+v) + k)$, where $h = 2^w - a$, $v = 2^2-b$, and $k$
-is the number of points in $S$ dominated by $q$.
-The data structure uses $O(n \log n)$ space.
-\end{theorem}
 \section{Conclusion}
 
 We present a new data structure for local searches
