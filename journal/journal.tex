@@ -383,11 +383,39 @@ than basic predecessor operations
 the resulting index).
 
 \paragraph{Hash Maps.}
+\wolfgang{TO CHECK: Do we need the full-randomness assumption in 
+Theorem 2.1? Check about multiplication?}
 Our data structure makes extensive use of
 hashing. In particular, we will maintain several
 succinct hash tables that store additional
-information for supporting fast queries.
-For this, we will use a hash table described
+information for supporting fast queries, both
+in the static and in the dynamic setting.
+For the static case,
+we need to be able to store a constant-time $r$-bit function on 
+$n$ keys using $O(rn)$ bits \wolfgang{Do we need the more
+precise form of $rn + cn + o(n)$? Is there a theoretical
+reference for this?}; the 
+function may return arbitrary values outside of its domain. 
+Practical implementations of this are described
+in~\cite{BelazzouguiBoPaVi11}, a theoretical
+construction was presented by
+Chazelle~\etal~\cite{ChazelleKiRuTa04}. Its
+properties are summarized in the following theorem:
+
+\begin{theorem}\label{thm:bloomier_filter}
+For any $r \geq 1$, there exists a dynamic dictionary that
+stores a static set $X$ of $n$ entries with keys 
+from $\{0, \dots, 2^w-1\}$ and with 
+associated values of $r$ bits each.
+The dictionary supports queries in $O(1)$ time,
+using $O(nr)$ \emph{bits} of space. The look-ups for entries
+from $X$ always return the correct result, the values
+for keys outside $X$ may return arbitrary values.
+\qed
+\end{theorem}
+
+
+For the dynamic case, we will use a hash table described
 by Demaine~\etal~\cite{DemaineMePaPa06}, whose
 properties are summarized in the following theorem:
 
@@ -401,18 +429,6 @@ The bounds for the space and the queries are
 worst-case, the bounds for the updates hold with
 high probability.\qed
 \end{theorem}
-
-\wolfgang{TO CHECK: Do we need the full-randomness assumption in 
-Theorem 2.1? Check about multiplication?}
-
-\wolfgang{Cite a specific theorem for this, similar to 
-  Theorem~\ref{thm:succinct_retrieval_only_hashtable}?}
-\wolfgang{Check whether we actually need the following? Is the
-$O(n \log w)$ overhead from Theorem 2.1 enough?}
-We assume to be able to store a constant-time $r$-bit function on 
-$n$ keys using $rn+cn +o(n)$ bits, for some constant $c\geq 0$: the 
-function may return arbitrary values outside of its domain (for 
-practical implementations see~\cite{BelazzouguiBoPaVi11}).
 
 \section{Z-fast Tries} 
 
@@ -979,10 +995,10 @@ of $\alpha$ (if any).
 By Theorem~\ref{thm:succinct_retrieval_only_hashtable},
 we can store a dictionary that maps every element 
 $q \in Q$ to $|n_{\exit(q)}|$ in space $O(n \log w)$ as $|Q|\leq n$.
-Furthermore, we can store another dictionary that maps
+Furthermore, by Theorem~\ref{thm:bloomier_filter},
+we can store another dictionary that maps
 every $p\in P$ to the smallest index $i$ such that 
 $p[0,w-2^{2^i} - 1]\in Q$.
-\wolfgang{What is the reference?}
 Since $|P| = O(n \log\log w)$,
 this map takes $O(n\log\log w\log\log\log w) = O(n\log w)$ bits. 
 To compute $f(p)$, we first find the index $i$ for $p$ in 
@@ -1016,14 +1032,17 @@ for the details.
        \If{$e\prec q$}{%
            \tcp{We found a long extent}
            \Return{$\fbs^-(q,|e|,|q|)$}\;
+	   \label{line:ret1}
        }
        \tcp{We exit at the node of name $q[0, t-1]$}
        \Return{$\pred(q,t)$} 
+       \label{line:ret2}
   }
   $t \gets \widehat{f}(p+1)$\;
   \If{$t \neq \bot$}{%
     \tcp{$q^-$ is the predecessor of $p+1$} 
     \Return $\lrange((p+1)[0,t-1])-1$ 
+    \label{line:ret3}
   }
   $t \leftarrow \widehat{f}(p-1)$\;
   \If{$t \neq \bot$}{%
@@ -1038,10 +1057,8 @@ for the details.
 \label{algo:pred-short}
 \end{algorithm}
 
-Before proceeding with the presentation of the algorithms, we
-observe two useful lemmas. The first lemma shows that we can
-use the short distance between a query string $q$ and the 
-set $S$ in order to find an appropriate starting prefix in $S$. 
+The following lemma helps us bound the number of
+iterations of Algorithm~\ref{algo:pred-short}.
 \begin{lemma}
 \label{lemma:hitpref}
 Let $q \in \{0, 1\}^w$ be a query string.
@@ -1053,7 +1070,7 @@ belongs to $\Pref(S)$.
 
 \begin{proof}
 There are $2^{w-j}$ strings in $\{0, 1\}^w$
-with prefix $p$, ($q$ being one of them), and the same holds
+with prefix $p$ ($q$ being one of them), and the same holds
 for $p - 1$ and $p + 1$. 
 Let $s$ be the string in $S$ that realizes
 $d(q, S)$, i.e., $s = q^-$ or $ s = q^+$.
@@ -1063,72 +1080,90 @@ so $s$ must have prefix either $p$ or $p + 1$ or $p-1$.
 
 
 \begin{theorem}
-Algorithm~\ref{algo:pred-short} returns the predecessor of $x$
-in time $O(\log\log d(x,S))$, and requires an index of $O(n \log w )$
-bits of space (in addition to the space needed to store the elements of $S$).
+Algorithm~\ref{algo:pred-short} returns the predecessor of $q$
+in time $O(\log\log d(q,S))$, using an index with 
+$O(n \log w)$ bits of space (in addition to the space 
+to store the elements of $S$).
 \end{theorem}
-\begin{proof}
-First we show that the algorithm is correct. If we exit at the first return
-instruction, $e$ is a valid extent and a prefix of $x$, so we start correctly a
-fat binary search. At the second return instruction we know the $x[0\..t)$ is
-the name node $\alpha$, but the extent of $\alpha$ is not a prefix of $x$, so
-$x$ exits exactly at $\alpha$, and again we return the correct answer. If $p+1$ is a valid prefix of some element of $S$, but $p$ is not, then the predecessor
-of $p$ is the predecessor of the least element prefixed by $p+1$, which we
-return (analogously for $p-1$).
 
+\begin{proof}
+First we show correctness. If we reach the first return
+instruction in Line~\ref{line:ret1}, then $e$ is a valid 
+extent and a prefix of $q$, so we start correctly a
+fat binary search. At the second return instruction
+in Line~\ref{line:ret2}, we know the $q[0, t - 1]$ is
+the name of a node $\alpha$, but the extent of 
+$\alpha$ is not a prefix of $q$, so
+$q$ exits exactly at $\alpha$, and again we return the correct answer. 
+If $p + 1$ is a valid prefix of some element of $S$, but $p$ is not, 
+then the predecessor
+of $p$ is the predecessor of the least element prefixed by $p + 1$, which we
+return in Line~\ref{line:ret3} (and analogously for $p - 1$).
+
+Next, we argue about the running time.
 By Lemma~\ref{lemma:hitpref}, we will hit a prefix in our set $P$ as soon as
-$w-2^{2^i}\leq w-\log d(x,S)$, that is, $i>\log\log\log d(x,S)$. If $i$ is the
-smallest integer satisfying the latter condition, then $i-1\leq \log\log\log
-d(x,S)$, so $2^{2^i}\leq (\log d(x,S))^2$, which guarantees that the fat binary
+$w - 2^{2^i} \leq w - \log d(q,S)$, that is, as soon as 
+$i > \log\log\log d(q, S)$. If $i$ is the
+smallest integer satisfying the latter condition, then 
+$i - 1 \leq \log\log\log d(q, S)$, so $2^{2^i} \leq (\log d(q, S))^2$, 
+which guarantees that the fat binary
 search, which starts from an extent of length at least $|e| \geq t \geq
-w-2^{2^i} \geq w-(\log d(x,S))^2$, will complete in time $O(\log
-b-a)=O(\log\log d(x,S))$ (see Theorem~\ref{thm:correctnessfbs}). If we exit from the loop,
-it means that $i>\log\log\log d(x,S)$ implies $2^{2^i}>w/2$, hence
-$(\log d(x,S))^2>w/2$, so the last fat binary search (that takes $O(\log w)$
+w - 2^{2^i} \geq w - (\log d(q, S))^2$, will complete in time 
+$O(\log b - a)=O(\log\log d(q, S))$ (see Theorem~\ref{thm:correctnessfbs}). 
+If we exit from the loop,
+it means that $i > \log\log\log d(q, S)$ which implies $2^{2^i}>w/2$, hence
+$(\log d(q,S))^2>w/2$, so the last fat binary search  taking $O(\log w)$
 steps to complete) is still within our time bounds.
 \end{proof}
 
 \subsection{Long-distance predecessor algorithm}
 \label{sec:long}
 
-We now discuss Algorithm~\ref{algo:pred-long}, whose running time depends on long
+We now discuss Algorithm~\ref{algo:pred-long}, whose 
+running time depends on long
 distances. Let $P$ be the set obtained by ``cutting''
-every internal extent $e_\alpha$ to the length of the smallest power of $2$ (if
-any) in the skip interval of $\alpha$; more precisely:
+every internal extent $e_\alpha$ to the length of the smallest power of 
+$2$ (if any) in the skip interval of $\alpha$, that is:
 \[
-	P=\bigcup_\text{$\alpha$ internal}\{\,e_\alpha[0\..2^k) \mid 2^k \in
-	[|n_\alpha|\..|e_\alpha|] \text{ and $k$ is the smallest possible}\,\}.
+P =\bigcup_\text{$\alpha$ internal}\{\,e_\alpha[0,2^k -1] \mid 2^k \in
+	[|n_\alpha|, |e_\alpha|] \text{ and $k$ is the smallest possible}\,\}.
 \]
-where $\alpha$ ranges over all nodes. Since this time we
-have at most one prefix per node, $|P|=O(n)$, so the function $f$ required by
-Theorem~\ref{th:pref} can be stored in $O(n\log w)$ bits. 
+where $\alpha$ ranges over all nodes. This time, we
+have at most one prefix per node, so $|P| = O(n)$, and 
+the function $f$ required by Theorem~\ref{th:pref} can be stored 
+in $O(n\log w)$ bits, by Theorem~\ref{thm:succinct_retrieval_only_hashtable}. 
 
 Algorithm~\ref{algo:pred-long} keeps track of the length $a$ of an
-internal extent that is known to be a prefix of $x$. At each step, we try to
-find another extent by probing a prefix of $x$ whose length is the smallest power of two larger than
-$a$. Because of the way the set $P$ has been built, we can miss the longest
+internal extent that is known to be a prefix of $q$. At each step, we 
+try to find another extent by probing a prefix of $q$ whose 
+length is the smallest power of $2$ larger than
+$a$. By the construction of $P$, we can miss the longest
 prefix length at most by a factor of two. 
 
 \begin{theorem}	
 \label{thm:pred-long}
-Algorithm~\ref{algo:pred-long} returns the predecessor of an input string $x$
-in time $O(\log(w-\log D(x,S)))$, and requires an index of $O(n \log w)$ bits of space (in addition to the space needed to store the elements of $S$).
+Algorithm~\ref{algo:pred-long} returns the predecessor of  $q$
+in time $O(\log(w-\log D(q, S)))$, using an index with 
+$O(n \log w)$ bits of space (in addition to the space 
+to store the elements of $S$).
 \end{theorem}
+
 \begin{proof}
-First we show that the algorithm is correct. It can be easily seen that at each
-step $a$ is either 0 or the length of an internal extent that is a prefix of
-$x$. Moreover, if there is an internal extent of length at least $m$ that is
-a prefix of $x$, then $t\neq\bot$, so we if we exit at the first return
-instruction, the fat binary search completes correctly. If $t\neq \bot$,
-we know that $x[0\..t)$ is the name of a node $\alpha$
-(because $(a\..w)$ is a union of consecutive skip intervals, and the smallest power of two in such $(a\..w)$ is
+First we show correctness. It can be easily seen that at each
+step $a$ is either $0$ or the length of an internal extent that is a prefix of
+$q$. Moreover, if there is an internal extent of length at least $m$ that is
+a prefix of $q$, then $t\neq\bot$, so we if we exit at the first return
+instruction, the fat binary search completes correctly. If $t \neq \bot$,
+we know that $q[0,t - 1]$ is the name of a node $\alpha$
+(because $[a + 1,w - 1])$ is a union of consecutive skip intervals, 
+and the smallest power of $2$ in such an interval $[a+1,w - 1]$ is
 a fortiori the smallest power of two in a skip interval): if  
-$x$ is smaller than the smallest leaf
+$q$ is smaller than the smallest leaf
 under $\alpha$ (or larger than the largest such leaf), we immediately know the
 predecessor and can safely return with a correct value. The return instruction
 at the exit of the loop is trivially correct.
 
-Observe that when $m>w-\log D(x,S)$
+Next, we discuss the running time. Observe that when $m > w - \log D(q,S)$
 either the string $x[0\..m)$ will not be in $\Pref S$ (because of
 Lemma~\ref{lemma:shortinprefs}) and thus $t=\bot$, or $x$ will be larger (or
 smaller) than every element of $S$ prefixed by $x[0\..t)$, which will cause the
@@ -1143,27 +1178,27 @@ search at the end of the loop will end within the prescribed time bounds.
 
 \begin{algorithm}
 \KwIn{a query string $q\in 2^w$}
-\KwOut{the index $i$ such that $S[i]=x^-$}
+\KwOut{the index $i$ such that $S[i]=q^-$}
 
  $a \gets 0$\;
 \While{$a<w/2$}{%
-  $m \gets \text{least power of 2 in $(a\..w)$}$\;
-  $t \gets \hat f(x[0\..m))$\;
+  $m \gets \text{least power of $2$ in $[a+1,w-1]$}$\;
+  $t \gets \hat f(q[0, m-1])$\;
   \If{$t = \bot$}{%
-     \Return{$\fbs^-(x,a,m)$}
+     \Return{$\fbs^-(q,a,m)$}
      \tcp{We obtained the longest possible prefix} 
   }
-  $p \gets x[0\..t)$
-  \If{$S[\lrange(p)]\geq x$}{%
+  $p \gets q[0,t-1]$\;
+  \If{$S[\lrange(p)]\geq q$}{%
     \Return{$\lrange(p)-1$}
   }
-  \If{$S[\rrange(p)]<x$}{%
+  \If{$S[\rrange(p)]<q$}{%
     \Return $\rrange(p)$
   }
   $a \gets |\extent(p)|$ 
   \tcp{This is a valid extent}
 }
-\Return{$\fbs^-(x,a,w)$}
+\Return{$\fbs^-(q, a, w)$}
 
 
 \caption{Long-distance speedup.}
