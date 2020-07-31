@@ -171,7 +171,7 @@ For instance, another case is realized by exponential
 trees~\cite{AnderssonTh07}.\wolfgang{Which case is this?
 Provide more details?} 
 For a comprehensive discussion of the literature, we refer
-the reader to Mihai \Patrascu's thesis~\cite{Patrascu08}.
+the reader to \Patrascu's thesis~\cite{Patrascu08}.
 
 Thus, it is fair to say that by now, 
 the worst-case complexity of the predecessor 
@@ -403,7 +403,7 @@ Chazelle~\etal~\cite{ChazelleKiRuTa04}. Its
 properties are summarized in the following theorem:
 
 \begin{theorem}\label{thm:bloomier_filter}
-For any $r \geq 1$, there exists a dynamic dictionary that
+For any $r \geq 1$, there exists a static dictionary that
 stores a static set $X$ of $n$ entries with keys 
 from $\{0, \dots, 2^w-1\}$ and with 
 associated values of $r$ bits each.
@@ -459,7 +459,7 @@ Figure~\ref{fig:trie}.
 The \emph{compressed trie} $T$ for $S$ is obtained
 from $T'$ by contracting into a single edge each maximal path in $T'$ that
 has only nodes with exactly one child.
-The root of $T$ is corresponds to the highest node of $T'$ that has 
+The root of $T$ corresponds to the highest node of $T'$ that has 
 two children.  Every inner node in $T$ has exactly two children,
 and $T$ has $n$ leaves. 
 Consequently, $T$ has $O(n)$ nodes. 
@@ -924,8 +924,8 @@ compute correctly the extent of $\exit(p)$, so we return
 $f(p)=|n_{\exit(p)}|$.
 If $p \not\in \Pref(S)$, then the test if 
 $p \preceq e$ must fail for every extent in $T$. 
-Hence, in this case, last step returns $\bot$.
-\footnote{Observe that actually $\hat f$ will return the length 
+Hence, in this case, last step returns $\bot$.\footnote{Observe 
+that actually $\widehat f$ will return the length 
 of the name of the exit node for all prefixes in a set $\hat P$ that 
 satisfies $P\subseteq \hat P\subseteq\Pref(S)$.}
 \end{proof}
@@ -945,30 +945,6 @@ performance depends on the short and on the
 long distance between the $q$ and $S$:
 both algorithms use the setup from Theorem~\ref{th:pref}, but with 
 different choices of the function $f:P\to \N$. 
-
-\begin{lemma}
-\label{lemma:shortinprefs}
-Let $q \in \{0, 1\}^w$ be a query string,
-and let $p \in \Pref(S)$ with 
-$|p| > w - \log D(q,S)$ and
-$p \preceq q$. Then, 
-the elements in $S$ with prefix $p$
-are either all at most as large or all
-at least as large as $q$.
-\end{lemma}
-
-\begin{proof}
-Since $|p| > w - \log D(q, S)$, we have
-that $p$ is a prefix of less than
-$2^{\log D(q,S)} = D(q, S)$ strings.
-From the definition of $D(q, S)$ it follows
-that $|q^+ - q^-| \geq D(q, S)$, so $p$
-cannot be a prefix of both $q^+$ and $q^-$.
-Now, since the set of strings in $S$ 
-with prefix $p$ forms an interval, all elements
-in $S$ with prefix $q$ are either all at most as large
-or all at least as large as $q$.
-\end{proof}
 
 \subsection{Short-distance predecessor algorithm}
 
@@ -1087,7 +1063,7 @@ to store the elements of $S$).
 \end{theorem}
 
 \begin{proof}
-First we show correctness. If we reach the first return
+First, we show correctness. If we reach the first return
 instruction in Line~\ref{line:ret1}, then $e$ is a valid 
 extent and a prefix of $q$, so we start correctly a
 fat binary search. At the second return instruction
@@ -1140,6 +1116,31 @@ length is the smallest power of $2$ larger than
 $a$. By the construction of $P$, we can miss the longest
 prefix length at most by a factor of two. 
 
+\begin{lemma}
+\label{lemma:shortinprefs}
+Let $q \in \{0, 1\}^w$ be a query string,
+and let $p \in \Pref(S)$ with 
+$|p| > w - \log D(q,S)$ and
+$p \preceq q$. Then, 
+the elements in $S$ with prefix $p$
+are either all at most as large or all
+at least as large as $q$.
+\end{lemma}
+
+\begin{proof}
+Since $|p| > w - \log D(q, S)$, we have
+that $p$ is a prefix of less than
+$2^{\log D(q,S)} = D(q, S)$ strings.
+From the definition of $D(q, S)$ it follows
+that $|q^+ - q^-| \geq D(q, S)$, so $p$
+cannot be a prefix of both $q^+$ and $q^-$.
+Now, since the set of strings in $S$ 
+with prefix $p$ forms an interval, all elements
+in $S$ with prefix $q$ are either all at most as large
+or all at least as large as $q$.
+\end{proof}
+
+
 \begin{theorem}	
 \label{thm:pred-long}
 Algorithm~\ref{algo:pred-long} returns the predecessor of  $q$
@@ -1149,72 +1150,352 @@ to store the elements of $S$).
 \end{theorem}
 
 \begin{proof}
-First we show correctness. It can be easily seen that at each
-step $a$ is either $0$ or the length of an internal extent that is a prefix of
-$q$. Moreover, if there is an internal extent of length at least $m$ that is
-a prefix of $q$, then $t\neq\bot$, so we if we exit at the first return
-instruction, the fat binary search completes correctly. If $t \neq \bot$,
-we know that $q[0,t - 1]$ is the name of a node $\alpha$
-(because $[a + 1,w - 1])$ is a union of consecutive skip intervals, 
-and the smallest power of $2$ in such an interval $[a+1,w - 1]$ is
-a fortiori the smallest power of two in a skip interval): if  
+First, we show correctness. An easy induction shows that throughout
+the algorithm, $a$ is either $0$ or the length of an 
+internal extent that is a prefix of $q$. 
+Then, it follows that since $[a + 1,w - 1]$ is a union of 
+consecutive skip intervals and since
+the smallest power of $2$ in interval $[a + 1,w - 1]$ is
+a fortiori the smallest power of two in a skip interval of $T$,
+that of $q[0, m-1]$ is in $\Pref(S)$, then $q[0, m-1]$ must be in $P$.
+Thus, if $t = \bot$, Theorem~\ref{th:pref} implies that $m$
+must be larger than the length of the longest internal extent
+that is a proper prefix of $q$, 
+so if we exit at the first return
+instruction in Line~\ref{line:retb1}, 
+the fat binary search completes correctly. On the other hand, 
+if $t \neq \bot$,
+we know that $q[0,t - 1]$ is the name of a node $\alpha$ in $T$.
+If  
 $q$ is smaller than the smallest leaf
-under $\alpha$ (or larger than the largest such leaf), we immediately know the
-predecessor and can safely return with a correct value. The return instruction
-at the exit of the loop is trivially correct.
+under $\alpha$ (or larger than the largest such under $\alpha$),
+we immediately know the
+predecessor and can safely return with a correct value
+in line~\ref{line:retb2} or~\ref{line:retb3}. The return instruction
+after the loop in line~\ref{line:retb4} is trivially correct.
 
-Next, we discuss the running time. Observe that when $m > w - \log D(q,S)$
-either the string $x[0\..m)$ will not be in $\Pref S$ (because of
-Lemma~\ref{lemma:shortinprefs}) and thus $t=\bot$, or $x$ will be larger (or
-smaller) than every element of $S$ prefixed by $x[0\..t)$, which will cause the
-loop to be interrupted at one of the last two if instructions. 
+Next, we discuss the running time. Observe that when $m > w - \log D(q, S)$,
+then either the string $q[0,m -1]$ will not be in 
+$\Pref(S)$ (by Lemma~\ref{lemma:shortinprefs}) and thus 
+$t=\bot$, or $q$ will be larger (or
+smaller) than every element of $S$ prefixed by $q[0,t-1]$, 
+which will cause a loop exit at one of the last two \textbf{if}-instructions. 
 Since $m$ gets at
-least doubled at each iteration, this condition will take place in at most $\log(w-\log D(x,S))$ iterations; moreover, $m\leq 2a$ (because there is always a power of 2 in the interval $(a\..2a]$), so the fat binary search in the first
-return will take no more than $\log(m-a)\leq \log a\leq \log (w-\log D(x,S))$.
-If the loop exits naturally, then there is a prefix of $x$ belonging to $\Pref
-S$ and longer than $w/2$, hence $w-\log D(x,S)\geq w/2$ and the fat binary
+least doubled at each iteration, this will happen 
+after at most $\log(w-\log D(q,S))$ iterations; moreover, 
+$m \leq 2a$ (because there is always a power of $2$ in the interval 
+$[a + 1, 2a]$), so the fat binary search in line~\ref{line:retb1}
+will take no more than $\log(m-a)\leq \log a\leq \log (w-\log D(q,S))$ steps.
+If the loop exits naturally, then there is a prefix of $q$ belonging to 
+$\Pref(S)$ and longer than $w/2$, hence $w-\log D(q, S)\geq w/2$ and 
+the fat binary
 search at the end of the loop will end within the prescribed time bounds.
 \end{proof}
 
 \begin{algorithm}
-\KwIn{a query string $q\in 2^w$}
+\KwIn{a query string $q \in \{0, 1\}^w$}
 \KwOut{the index $i$ such that $S[i]=q^-$}
 
  $a \gets 0$\;
 \While{$a<w/2$}{%
   $m \gets \text{least power of $2$ in $[a+1,w-1]$}$\;
-  $t \gets \hat f(q[0, m-1])$\;
+  $t \gets \widehat f(q[0, m-1])$\;
   \If{$t = \bot$}{%
      \Return{$\fbs^-(q,a,m)$}
+     \label{line:retb1}
      \tcp{We obtained the longest possible prefix} 
   }
   $p \gets q[0,t-1]$\;
   \If{$S[\lrange(p)]\geq q$}{%
     \Return{$\lrange(p)-1$}
+    \label{line:retb2}
   }
   \If{$S[\rrange(p)]<q$}{%
     \Return $\rrange(p)$
+    \label{line:retb3}
   }
   $a \gets |\extent(p)|$ 
   \tcp{This is a valid extent}
 }
 \Return{$\fbs^-(q, a, w)$}
-
+\label{line:retb4}
 
 \caption{Long-distance speedup.}
 \label{algo:pred-long}
 \end{algorithm}
 
-Finally, we can combine our improvements for short and long distances, obtaining an algorithm that is
-efficient when the input $x$ is either very close to or very far from $x^-$ or $x^+$:
+Finally, we can combine our improvements for short and long 
+distances, obtaining an algorithm that is
+efficient when the query $q$ is either very close to or very far 
+from $q^-$ or $q^+$:
+
 \begin{corollary}
-It is possible to compute the predecessor of a string $x$ in a set $S$
-in time $O(\log \min \{\,\log d(x,S),w-\log D(x,S)\,\})$, using an index that
+It is possible to compute the predecessor of a query $q$ in a set $S$
+of $n$ elements in time $O(\log \min \{\,\log d(q, S), w - \log D(q,S)\,\})$, 
+using an index that
 requires $O(n \log w)$ bits of space (in addition to the space
 needed to store the elements of $S$).
 \end{corollary}
 
 \subsection{Dynamic Version}
+
+We will now explain how to make our data
+structure dynamic. 
+The basic approach remains the same.
+However, we now maintain the trie $T$ explicitly. 
+This means that we no longer assume that $S$
+is given in a static read-only array with constant
+time access, but that the elements of $S$
+are stored in a trie that changes dynamically throughout
+the algorithm. Now, our space bounds also include
+the bits to represent $S$, so the best space bound
+that we can hope for is $O(nw)$, where $n$ is the
+current size of $S$.
+\wolfgang{TODO: Say more about how the trie is represented,
+in particular: hash table from names into pointer structure...}
+
+In particular, the following information needs to
+be maintained dynamically:
+\begin{itemize}
+  \item the trie $T$ that stores $S$;
+  \item the z-fast trie on $S$, given by the
+    handle resolver and the range locator;
+  \item the function $f$.
+\end{itemize}
+Some of this information can be updated easily
+by maintaining the appropriate dynamic dictionary 
+structures. Others require more work.
+The main challenges lie in updating the trie $T$ and
+in maintaining the range locator.
+
+\subsubsection{Updating the Trie}
+
+\wolfgang{TODO: Check for Long Distance}
+To perform the update operation, we need a
+procedure to compute the exit node
+$\exit(q)$ for any given element $q \in \{0, 1\}^w$. 
+For this, we proceed as in 
+Algorithm~\ref{algo:pred-short}, but skipping 
+the calls to $\widehat f(p + 1)$ and
+$\widehat f(p - 1)$. This will happen as 
+soon as the prefix $p$ lies in $P$, i.e., after
+$O(\log \log l)$ iterations, where $l$
+is height of $\exit(q)$ in $T$.
+\wolfgang{height is not defined. Probably I mean the length of the
+name of the exit node?}
+
+Unfortunately, it may happen that this height $l$ is as large as $w$,
+even if $d(q, S)$ is small.
+To get around this, we use a trick of Bose~\etal~\cite{BoseDoDuHoMo13}.
+Their idea is to perform a random shift of the universe. 
+More precisely, we pick a random $r \in \{0, 1\}^w$, and we
+add $r$ to all query and update elements that appear in 
+the data structure (modulo $2^w$).
+
+\begin{lemma}[Lemma 4 in \cite{BoseDoDuHoMo13}]
+\label{lemma:delta_lca_loglog_delta}
+Let $x, y \in \{0, 1\}^w$ be two fixed bitstrings.
+Let $r \in \{0, 1\}^w$ be picked uniformly at random.
+After a random shift of $\{0, 1\}^w$ by $r$, the 
+expected height of the lowest common ancestor of 
+$x$ and $y$ in a compressed trie is $O(\log|x - y|)$.\qed
+\end{lemma}
+
+\begin{proof}
+\wolfgang{Maybe we should repeat the proof, adapt to our technology,
+and make it also work for long prefixes}
+\end{proof}
+
+\begin{corollary}
+\label{cor:delta_fast_expected_lca}
+Let $S \subseteq \{0, 1\}^w$ and let $T$ be 
+a compressed trie $S$, shifted by a random offset
+$r \in \{0, 1\}^w$.
+Let $q \in \{0, 1\}^w$. 
+We can find the exit node for $q$  in expected time $O(\log\log d(q, S))$.
+The expectation is
+over the random choice of the shift $r$. 
+\end{corollary}
+
+\begin{proof}
+Suppose without loss of generality that $d(q, S) = |q - q^-|$.
+By Lemma~\ref{lemma:delta_lca_loglog_delta},
+the expected height $2^{2^i}$ of the lowest common ancestor of $q$ and $q^-$
+is $O(\log d(q, S)$.
+We perform the doubly exponential
+search on the prefixes of $q$, as in Algorithm~\ref{algo:pred-search}
+(without computing $\widehat f (p - 1)$ or $\widehat f (p + 1)$) 
+to find the height $2^{2^i}$. After
+that, we  use a fat binary search to find the
+exit node.
+Since $2^{2^i} = O(\log d(q, S))$ in expectation,
+it follows by Jensen's inequality that the number $i$
+of loop iterations to find  the height is $O(\log\log\log d(q, S))$
+in expectation. Thus, the expected running time is proportional to
+$i + \log 2^{2^i} = O(\log\log d(q, S))$. 
+\end{proof}
+
+\subsubsection{Implementing the Range Locator}
+
+To implement a dynamic range locator, 
+we need to maintain for each node $v \in T$ the
+leftmost and the rightmost element in the subtree $T_v$.
+To update this fast, we use an additional data structure.
+
+\begin{figure}
+\centering
+\includegraphics{pathdecomp}
+\caption{For each leaf $v'$ of $T$, we connect the nodes
+$v \in T$ by a dashed line for which $v$ is the leftmost leaf in $T_v$.
+Considering these
+subpaths for all leaves in $T$, we obtain a \emph{path decomposition}
+of $T$ (shown in dashed).}
+\label{fig:pathdecomp}
+\end{figure}
+To do this, we observe the following: let $v' \in T$ be 
+a leaf in $T$. Then, $v'$ is the leftmost (or rightmost)
+leaf in the subtrees of at most $w$ ancestors $v$ of $v'$.
+Furthermore, all these nodes form a subpath (more precisely,
+a prefix) of the path from $v$ to the root, see Figure~\ref{fig:pathdecomp}.
+Hence, if we maintain the nodes of 
+this subpath in a concatenable queue data structure
+(realized by, e.g., a balanced binary tree)~\cite{PreparateSh85},
+we can obtain $O(\log w)$ update and query time
+to find the leftmost (or rightmost) element in $T_v$
+for each $v \in T$.
+However, we need that the update and query time for this
+data structure
+depend on the \wolfgang{TODO: adapt terminology} height  
+of the query node $v$.
+Thus, we partition the possible heights
+$\{0, 1, \dots, w\}$ of the nodes on a 
+subpath into the sets
+$T_{-1} = \{0\}$, $T_i =[2^i, 2^{i+1})$, for $i = 0,\dots,\log w-1$, 
+and $T_{\log w} = \{w\}$.
+Each set is managed by a balanced binary tree, and the 
+roots of the trees are linked together. The height of the $i$-th binary 
+search tree is $\log |T_i| = O(i)$. Furthermore, if a query node
+of height $h$ is given, 
+the set $T_{\lfloor \log h \rfloor}$ is responsible for it, see 
+Figure~\ref{fig:queryds}.
+\begin{figure}
+\centering
+\includegraphics{queryds}
+\caption{The data structure for a subpath. We group the nodes
+in the subpath according to their heights, where the groups
+grow exponentially in size. Each group is represented by a
+balanced tree. The roots are joined in a linked
+list. With this data structure, a node $v$ of height $h$ can
+find the leftmost leaf in the subtree $T_v$ in time $O(\log h)$.}
+\label{fig:queryds}
+\end{figure}
+
+
+Moreover, $T_{-1}$ is a leaf (the depth of that node is $w$) 
+in the trie and therefore the minimum of the whole subpath. Thus, 
+the minimum of a subpath can be found from a given node 
+$v \in T_i$ in $O(i)$ time by following the
+pointers to the root of $T_i$ and the pointers down to $T_{-1}$.
+
+If a node $v$ has $h_k = O(\log d(q, S)$ height (remaining bits), 
+the node is within
+the tree $T_{\lfloor \log h_k \rfloor}$. Thus, it takes 
+$O(\log h_k) = O(\log\log\Delta)$ time to find the leftmost
+or rightmost leaf in $T_v$.
+
+Furthermore, we can support the following update operations:
+(i) \textbf{split}: given a subpath $\pi$ and a node $v$ on $\pi$, split 
+the representation of $\pi$ into two representations, one for the 
+\emph{lower} subpath from the leaf up to the child of $v$, and
+one for the \emph{upper} subpath starting from $v$; and (ii) 
+\textbf{join}: given a
+representation of an upper subpath starting at a node $v$ obtained 
+from an operation of type (i), and a representation for 
+a lower subpath up to a child of $v$, join the two representations
+into the representation for a joint subpath.
+Given the data structure, we can support
+both \textbf{split} and \textbf{join} in
+ $O(\log h)$ time, where $h$ is the height of 
+the node $v$ where the operation occurs. 
+This decomposition of $T$ into dynamically changing suppaths
+is similar to the \emph{preferred paths decomposition} of
+Tango trees~\cite{DemaineHaIaPa07}.
+
+\subsubsection{Performing an Update}
+
+We know from the Lemma~\ref{lemma:delta_lca_loglog_delta}, that 
+the lowest common ancestor of a query element $q$ has expected 
+height $h_k = O(\log \Delta)$.
+
+\begin{lemma}
+\label{lemma:delta_insert}
+Let $S \subseteq U$, and let $T$ be
+a randomly shifted $\Delta$-fast tree for 
+$S$.  Let $q \in U$ be fixed.
+We can insert or delete $q$ into $T$
+in $O(\log \log \Delta)$ expected time, where the expectation is 
+over the random choice of the shift $r$.
+\end{lemma}
+
+\begin{proof}
+To insert $q$ into $T$, we need to split an edge $(u,v)$ of $T$ into
+two edges $(u,b)$ and $(b,v)$. This creates
+exactly two new nodes in $T$, an inner node and a leaf node. 
+The branch node is exactly $\lca_T(q)$, and it has expected height 
+$h_k = O(\log \Delta)$, by Lemma~\ref{lemma:delta_lca_loglog_delta}. 
+Thus, it will
+take $O(\log\log \Delta)$ expected time to find
+the edge $(u,v)$, by
+Corollary~\ref{cor:delta_fast_expected_lca}.
+
+Once the edge $(u,v)$ is found, the hash maps $H_z$ and $H_u$ 
+can then be updated in constant time.
+Now let us consider the update time of the 
+hash map $H_\Delta$. Recall that
+$H_\Delta$ stores the lowest branch nodes for all prefixes
+of the elements in $S$ that have certain lengths.
+This means that all prefixes on the edge $(b,v)$ which 
+are stored in the hash map $T_\Delta$ need to
+be updated. Furthermore, prefixes at certain depths which 
+are on the new edge $(b,q)$ need to
+be added. For the edge $(b,v)$, we will enumerate 
+all prefixes at certain depths, but we will select only those that 
+lie on the edge $(b,v)$. This needs
+$O(\log\log\log\Delta)$ insertions and updates in total: we
+have to insert the prefixes $q_0 \dots q_{d_i}$ for all 
+$i \geq 1$ with $d_i < |b|$. Since we defined 
+$d_i = w - h_i = w - 2^{2^i}$, 
+and since $|b| = w - O(\log \Delta)$, 
+we have that $d_i \leq |b|$ as soon as 
+$c \log\Delta < 2^{2^i}$. This holds for 
+$i > \log\log (c\log \Delta)$, and hence $i =
+\Theta(\log\log\log\Delta)$.
+
+After that, the leftmost and rightmost elements for the subtrees
+of $T$ have to be updated. For this, we need to add one
+subpath for the new leaf $q$, and we may need to split
+a subpath at a node of height $h_k = O(\log \Delta)$ and join
+the resulting upper path with the newly created subpath. As we
+have seen, this takes $O(\log h_k) = O(\log \log \Delta)$ time.
+
+The operations for deleting an element $q$ from $S$ are symmetric.
+\end{proof}
+
+The following theorem summarizes our result.
+
+\begin{theorem}
+Let $r \in U$ be picked uniformly at random.
+After performing a shift of $U$ by $r$, 
+the $\Delta$-fast trie provides a data structure for the
+dynamic predecessor problem such that the 
+query operations take $O(\log \log \Delta)$ worst-case time and 
+the update operations need $O(\log \log \Delta)$ expected
+time, for $\Delta = \min \{|q-q^+|, |q-q^-|\}$, where $q$ is the
+requested element and $q^+$ and $q^-$ are the predecessor and
+successor of $q$ in the current set $S$. At any point in time, 
+the data structure needs $O(n)$ words of space, where $n = |S|$.
+\end{theorem}
+
 
 \section{Globally sensitive predecessor search}
 
@@ -1256,9 +1537,9 @@ index of elements of $S$ that are prefixed by $p$; if no such element exists,
 the results are unpredictable (hence the ``weak'' qualifier), but a single access to the set $S$ is sufficient
 to rule out this case and always get a correct result. Thus, we will be
 able to compute $\lrange(-)$, $\rrange(-)$ and $\extent(-)$ on arbitrary
-elements of $\Pref S$ in constant time. As a consequence, also $\pred(x,t)$ can
+elements of $\Pref(S)$ in constant time. As a consequence, also $\pred(x,t)$ can
 be extended so to return a correct value for every $t$ such that
-$x[0\..t)\in\Pref S$.
+$x[0\..t)\in \Pref(S)$.
 
 The basic idea of Algorithm~\ref{algo:finger} is that of using a \emph{finger}
 $y\in S$ to locate quickly an extent $e$ that is a prefix of $x$ with the guarantee that $w-|e|\leq\log|x-y|$. The extent
@@ -1276,7 +1557,7 @@ $e \gets \extent(y[0\..t)+1)$\;
 \If{$y[0\..t)+1\not\preceq e$}{%
   \Return $\rrange(y[0\..t))$
 }
-\tcp{$y[0\..t)+1\not\in\Pref S$} 
+\tcp{$y[0\..t)+1\not\in\Pref(S)$} 
 \If{$e\not\prec x$}{% 
   \Return{$\pred(x,t)$}
 }
@@ -1286,7 +1567,7 @@ $a \gets 0$\;
 \While{$a<(w-|e|)/2$}{%
   $m \gets \text{least power of 2 in $(a-|e|\..w-|e|)$}$\;
   $p \gets x[0\..m+|e|)$
-  \If{$p\not\in\Pref S$}{%
+  \If{$p\not\in\Pref(S)$}{%
     \Return $\fbs^-(x,a+|e|,m+|e|)$
   }
   \If{$S[\lrange(p)]\geq x$}{%
@@ -1313,23 +1594,23 @@ of space, for any $c$ (in addition to the space needed to store the elements of 
 \begin{proof}
 First we show that the algorithm is correct. 
 If we exit at the first return instruction, $y[0\..t)+1$ is
-not in $\Pref S$, which implies that $x^-$ is prefixed by $y[0\..t)$, and thus
+not in $\Pref(S)$, which implies that $x^-$ is prefixed by $y[0\..t)$, and thus
 the output is correct. If we exit at the second return instruction, $x$
 exits at the same node as $y[0\..t)+1=x[0\..t)$. Otherwise, $e$ is an extent
 that is a proper prefix of $x$, and the remaining part of the algorithm
 is exactly Algorithm~\ref{algo:pred-long} applied to the set of strings of $S$ 
 that are prefixed by $e$, with $e$ removed (the algorithm is slightly
-simplified by the fact that we can test membership to $\Pref S$ and compute
+simplified by the fact that we can test membership to $\Pref(S)$ and compute
 extents for every prefix). Correctness is thus immediate.
 
 All operations are constant time, except for the last loop. Note that as soon as
 $m+|e|\geq w-\log D(x,S)$ the loop ends or a prefix of $x$ is found (as in the
 proof of Algorithm~\ref{algo:pred-long}), and this requires no more than $\log(w-|e|-\log
 D(x,S))$ iterations; moreover, $m\leq 2a$ (because there is always
-a power of 2 in the interval $(a\..2a]$), so the fat binary search in the first
+a power of $2$ in the interval $(a\..2a]$), so the fat binary search in the first
 return will take no more than $\log(m-a)\leq \log a\leq \log (w-|e|-\log D(x,S))$.
 If the loop exits naturally, then there is a prefix $e'$ of $x$ belonging
-to $\Pref S$ and longer than $(w+|e|)/2$, hence by
+to $\Pref(S)$ and longer than $(w+|e|)/2$, hence by
 Lemma~\ref{lemma:shortinprefs}, $w-\log D(x,S)\geq (w+|e|)/2$; the fat binary search at the
 end takes time $O(\log (w-(a+|e|)))=O(\log (w-|e'|))=O(\log( w/2 -
 |e|/2)))=O(\log(w-|e|-\log D(x,S)))$, within the prescribed time bounds.
@@ -1847,244 +2128,6 @@ is linear.
 \end{proof}
 
 \section{Dynamic $\Delta$-fast tries}
-
-We will now explain how to extend our data
-structure to the dynamic case. 
-The basic data structure remains the same, but
-we need to update the hashtables and the trie $T$
-after each insertion and deletion.
-In particular, our data structure requires that
-for each $v$ in $T_v$, we can access the 
-leftmost and the rightmost node
-in the subtree $T_v$.
-In the static case, this could be done simply
-by maintaining explicit pointers from each node
-$v \in T$ to these nodes in $T_v$, letting us find
-the nodes in $O(1)$ time.
-In the dynamic case, we will maintain a data structure
-which allows finding and updating these nodes in
-in $O(\log\log \Delta)$ time.
-
-\subsection{Computing Lowest Common Ancestor}
-
-To perform the update operation, we need a
-procedure to compute the lowest common ancestor 
-$\lca_T(q)$ for any given element $q \in U$. 
-For this, we proceed as in the query algorithm from 
-Section~\ref{sec:staticquery}, but skipping 
-the lookups for $H_\Delta[q_i-1]$ and
-$H_\Delta[q_i+1]$. By the analysis in 
-Section~\ref{sec:staticquery}, this will find 
-$\lca_T(q)$ in time $O(\log \log l)$, where $l$
-is height of $\lca_T(q)$ in $T$.
-
-Unfortunately, it may happen that this height $l$ is as large as $w$,
-even if $q$ is close to an element in the current set $S$.
-To get around this, we use a trick of Bose~\etal~\cite{BoseDoDuHoMo13}.
-Namely, their idea is to perform a random shift of the universe. 
-More precisely, we pick a random number $r \in U$, and we
-add $r$ to all query and update elements that appear in 
-the data structure (modulo $|U|$).
-
-\begin{lemma}[Lemma 4 in \cite{BoseDoDuHoMo13}]
-\label{lemma:delta_lca_loglog_delta}
-Let $x, y \in U$ be two fixed elements in $U$.
-Let $r \in U$ be picked uniformly at random.
-After a random shift of $U$ by $r$, the 
-expected height of the lowest common ancestor of 
-$x$ and $y$ in a compressed trie is $O(\log|x-y|)$.\qed
-\end{lemma}
-
-\begin{corollary}
-\label{cor:delta_fast_expected_lca}
-Let $S \subseteq U$ and let $T$ be a randomly
-shifted $\Delta$-fast trie storing $S$.
-Let $q \in U$. 
-We can find $\lca_T(q)$ in expected time $O(\log\log \Delta)$,
-where $\Delta = \min\{|q - q^+|, |q-q^-|\}$, the elements 
-$q^+$ and $q^-$ being the predecessor and successor of $q$ in $S$.
-The expectation is
-over the random choice of the shift $r$. 
-\end{corollary}
-
-\begin{proof}
-Suppose without loss of generality that $\Delta = |q - q^+|$.
-By Lemma~\ref{lemma:delta_lca_loglog_delta},
-the expected height $h_k$ of the lowest common ancestor of $q$ and $q^+$
-is $O(\log \Delta)$.
-We perform the doubly exponential
-search on the prefixes of $q$, as in Section~\ref{sec:staticquery} 
-(without checking $q_i+1$) to find the height $h_k$. After
-that, we  resume the search for $\lca_T(q)$ on the 
-remaining $h_k$ bits. Since $h_k = O(\log \Delta)$ in expectation,
-it follows by Jensen's inequality that the number $k$
-of loop iterations to find  $h_k$ is $O(\log\log\log \Delta)$
-in expectation. Thus, the expected running time is proportional to
-$k + \log h_k = O(\log\log\Delta)$. 
-\end{proof}
-
-\subsection{Managing the Left- and Rightmost Elements 
-of the Subtrees}
-
-We also need to maintain for each node $v \in T$ the
-leftmost and the rightmost element in the subtree $T_v$.
-In the static case, it suffices to have direct pointers
-from $v$ to the respective leaves, but
-in the dynamic case, we need an additional data structure. 
-
-\begin{figure}
-\centering
-\includegraphics{pathdecomp}
-\caption{For each leaf $v'$ of $T$, the nodes
-$v \in T$ for which $v$ is the leftmost leaf in $T_v$
-if a subpath of a root-to-leaf path in $T$. Considering these
-subpaths for all leaves in $T$, we obtain a \emph{path decomposition}
-of $T$ (shown in bold).}
-\label{fig:pathdecomp}
-\end{figure}
-To do this, we observe the following: let $v' \in T$ be 
-a leaf in $T$. Then, $v'$ is the leftmost (or rightmost)
-leaf in the subtrees of at most $w$ ancestors $v$ of $v'$.
-Furthermore, all these nodes form a subpath (more precisely,
-a prefix) of the path from $v$ to the root, see Figure~\ref{fig:pathdecomp}.
-Hence, if we maintain the nodes of 
-this subpath in a concatenable queue data structure
-(realized by, e.g., a balanced binary tree)~\cite{PreparateSh85},
-we can obtain $O(\log w)$ update and query time
-to find the leftmost (or rightmost) element in $T_v$
-for each $v \in T$.
-However, we need that the update and query time for this
-data structure
-depend on the height $h_i$ (i.e, the remaining bits) 
-of the query node $v$.
-Thus, we partition the possible heights
-$\{0, 1, \dots, w\}$ of the nodes on a 
-subpath into the sets
-$T_{-1} = \{0\}$, $T_i =[2^i, 2^{i+1})$, for $i = 0,\dots,\log w-1$, 
-and $T_{\log w} = \{w\}$.
-Each set is managed by a balanced binary tree, and the 
-roots of the trees are linked together. The height of the $i$-th binary 
-search tree is $\log |T_i| = O(i)$. Furthermore, if a query node
-of height $h$ is given, 
-the set $T_{\lfloor \log h \rfloor}$ is responsible for it, see 
-Figure~\ref{fig:queryds}.
-\begin{figure}
-\centering
-\includegraphics{queryds}
-\caption{The data structure for a subpath. We group the nodes
-in the subpath according to their heights, where the groups
-grow exponentially in size. Each group is represented by a
-balanced tree. The roots are joined in a linked
-list. With this data structure, a node $v$ of height $h$ can
-find the leftmost leaf in the subtree $T_v$ in time $O(\log h)$.}
-\label{fig:queryds}
-\end{figure}
-
-
-Moreover, $T_{-1}$ is a leaf (the depth of that node is $w$) 
-in the trie and therefore the minimum of the whole subpath. Thus, 
-the minimum of a subpath can be found from a given node 
-$v \in T_i$ in $O(i)$ time by following the
-pointers to the root of $T_i$ and the pointers down to $T_{-1}$.
-
-If a node $v$ has $h_k = O(\log \Delta)$ height (remaining bits), 
-the node is within
-the tree $T_{\lfloor \log h_k \rfloor}$. Thus, it takes 
-$O(\log h_k) = O(\log\log\Delta)$ time to find the leftmost
-or rightmost leaf in $T_v$.
-
-Furthermore, we can support the following update operations:
-(i) \textbf{split}: given a subpath $\pi$ and a node $v$ on $\pi$, split 
-the representation of $\pi$ into two representations, one for the 
-\emph{lower} subpath from the leaf up to the child of $v$, and
-one for the \emph{upper} subpath starting from $v$; and (ii) 
-\textbf{join}: given a
-representation of an upper subpath starting at a node $v$ obtained 
-from an operation of type (i), and a representation for 
-a lower subpath up to a child of $v$, join the two representations
-into the representation for a joint subpath.
-Given the data structure, we can support
-both \textbf{split} and \textbf{join} in
- $O(\log h)$ time, where $h$ is the height of 
-the node $v$ where the operation occurs. 
-This decomposition of $T$ into dynamically changing suppaths
-is similar to the \emph{preferred paths decomposition} of
-Tango trees~\cite{DemaineHaIaPa07}.
-
-\subsection{Performing an Update}
-
-We know from the Lemma~\ref{lemma:delta_lca_loglog_delta}, that 
-the lowest common ancestor of a query element $q$ has expected 
-height $h_k = O(\log \Delta)$.
-
-\begin{lemma}
-\label{lemma:delta_insert}
-Let $S \subseteq U$, and let $T$ be
-a randomly shifted $\Delta$-fast tree for 
-$S$.  Let $q \in U$ be fixed.
-We can insert or delete $q$ into $T$
-in $O(\log \log \Delta)$ expected time, where the expectation is 
-over the random choice of the shift $r$.
-\end{lemma}
-
-\begin{proof}
-To insert $q$ into $T$, we need to split an edge $(u,v)$ of $T$ into
-two edges $(u,b)$ and $(b,v)$. This creates
-exactly two new nodes in $T$, an inner node and a leaf node. 
-The branch node is exactly $\lca_T(q)$, and it has expected height 
-$h_k = O(\log \Delta)$, by Lemma~\ref{lemma:delta_lca_loglog_delta}. 
-Thus, it will
-take $O(\log\log \Delta)$ expected time to find
-the edge $(u,v)$, by
-Corollary~\ref{cor:delta_fast_expected_lca}.
-
-Once the edge $(u,v)$ is found, the hash maps $H_z$ and $H_u$ 
-can then be updated in constant time.
-Now let us consider the update time of the 
-hash map $H_\Delta$. Recall that
-$H_\Delta$ stores the lowest branch nodes for all prefixes
-of the elements in $S$ that have certain lengths.
-This means that all prefixes on the edge $(b,v)$ which 
-are stored in the hash map $T_\Delta$ need to
-be updated. Furthermore, prefixes at certain depths which 
-are on the new edge $(b,q)$ need to
-be added. For the edge $(b,v)$, we will enumerate 
-all prefixes at certain depths, but we will select only those that 
-lie on the edge $(b,v)$. This needs
-$O(\log\log\log\Delta)$ insertions and updates in total: we
-have to insert the prefixes $q_0 \dots q_{d_i}$ for all 
-$i \geq 1$ with $d_i < |b|$. Since we defined 
-$d_i = w - h_i = w - 2^{2^i}$, 
-and since $|b| = w - O(\log \Delta)$, 
-we have that $d_i \leq |b|$ as soon as 
-$c \log\Delta < 2^{2^i}$. This holds for 
-$i > \log\log (c\log \Delta)$, and hence $i =
-\Theta(\log\log\log\Delta)$.
-
-After that, the leftmost and rightmost elements for the subtrees
-of $T$ have to be updated. For this, we need to add one
-subpath for the new leaf $q$, and we may need to split
-a subpath at a node of height $h_k = O(\log \Delta)$ and join
-the resulting upper path with the newly created subpath. As we
-have seen, this takes $O(\log h_k) = O(\log \log \Delta)$ time.
-
-The operations for deleting an element $q$ from $S$ are symmetric.
-\end{proof}
-
-The following theorem summarizes our result.
-
-\begin{theorem}
-Let $r \in U$ be picked uniformly at random.
-After performing a shift of $U$ by $r$, 
-the $\Delta$-fast trie provides a data structure for the
-dynamic predecessor problem such that the 
-query operations take $O(\log \log \Delta)$ worst-case time and 
-the update operations need $O(\log \log \Delta)$ expected
-time, for $\Delta = \min \{|q-q^+|, |q-q^-|\}$, where $q$ is the
-requested element and $q^+$ and $q^-$ are the predecessor and
-successor of $q$ in the current set $S$. At any point in time, 
-the data structure needs $O(n)$ words of space, where $n = |S|$.
-\end{theorem}
 
 \section{Conclusion}
 
