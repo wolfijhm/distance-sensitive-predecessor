@@ -421,11 +421,15 @@ properties are summarized in the following theorem:
 
 \begin{theorem}\label{thm:succinct_retrieval_only_hashtable}
 For any $r \geq 1$, there exists a dynamic dictionary that
-stores entries with keys from $\{0, \dots, 2^w-1\}$ and with 
+stores a dynamic set $X$ oof entries 
+with keys from $\{0, \dots, 2^w-1\}$ and with 
 associated values of $r$ bits each.
 The dictionary supports updates and queries in $O(1)$ time,
 using $O(n \log(w - \log n) + nr)$ \emph{bits} of space.
-The bounds for the space and the queries are
+The look-ups for entries
+from $X$ always return the correct result, the values
+for keys outside $X$ may return arbitrary values.
+The asymptotic bounds for the space and the queries are
 worst-case, the bounds for the updates hold with
 high probability.\qed
 \end{theorem}
@@ -962,12 +966,12 @@ It is defined as follows:
 To store the function $f: P\to \N$ used in Theorem~\ref{th:pref}, 
 we define a subset of $P$:
 \[
-Q=\bigcup_{\text{node $\alpha$ of $T$}}
-\min{}_\preceq\{\,p\in P\mid n_\alpha\preceq p\preceq e_\alpha\,\}
+Q=\bigcup_{\text{node $v$ of $T$}}
+\min{}_\preceq\{\,p\in P\mid n_v \preceq p\preceq e_v\,\}
 \]
-For every node $\alpha$ of $T$, the set $Q$ contains
+For every node $v$ of $T$, the set $Q$ contains
 the shortest string in $P$ that sits between the name and the extent
-of $\alpha$ (if any). 
+of $v$ (if any). 
 By Theorem~\ref{thm:succinct_retrieval_only_hashtable},
 we can store a dictionary that maps every element 
 $q \in Q$ to $|n_{\exit(q)}|$ in space $O(n \log w)$ as $|Q|\leq n$.
@@ -1068,9 +1072,9 @@ instruction in Line~\ref{line:ret1}, then $e$ is a valid
 extent and a prefix of $q$, so we start correctly a
 fat binary search. At the second return instruction
 in Line~\ref{line:ret2}, we know the $q[0, t - 1]$ is
-the name of a node $\alpha$, but the extent of 
-$\alpha$ is not a prefix of $q$, so
-$q$ exits exactly at $\alpha$, and again we return the correct answer. 
+the name of a node $v$, but the extent of 
+$v$ is not a prefix of $q$, so
+$q$ exits exactly at $v$, and again we return the correct answer. 
 If $p + 1$ is a valid prefix of some element of $S$, but $p$ is not, 
 then the predecessor
 of $p$ is the predecessor of the least element prefixed by $p + 1$, which we
@@ -1098,13 +1102,13 @@ steps to complete) is still within our time bounds.
 We now discuss Algorithm~\ref{algo:pred-long}, whose 
 running time depends on long
 distances. Let $P$ be the set obtained by ``cutting''
-every internal extent $e_\alpha$ to the length of the smallest power of 
-$2$ (if any) in the skip interval of $\alpha$, that is:
+every internal extent $e_v$ to the length of the smallest power of 
+$2$ (if any) in the skip interval of $v$, that is:
 \[
-P =\bigcup_\text{$\alpha$ internal}\{\,e_\alpha[0,2^k -1] \mid 2^k \in
-	[|n_\alpha|, |e_\alpha|] \text{ and $k$ is the smallest possible}\,\}.
+P =\bigcup_\text{$v$ internal}\{\,e_v[0,2^k -1] \mid 2^k \in
+	[|n_v|, |e_v] \text{ and $k$ is the smallest possible}\,\}.
 \]
-where $\alpha$ ranges over all nodes. This time, we
+where $v$ ranges over all nodes. This time, we
 have at most one prefix per node, so $|P| = O(n)$, and 
 the function $f$ required by Theorem~\ref{th:pref} can be stored 
 in $O(n\log w)$ bits, by Theorem~\ref{thm:succinct_retrieval_only_hashtable}. 
@@ -1165,10 +1169,10 @@ so if we exit at the first return
 instruction in Line~\ref{line:retb1}, 
 the fat binary search completes correctly. On the other hand, 
 if $t \neq \bot$,
-we know that $q[0,t - 1]$ is the name of a node $\alpha$ in $T$.
+we know that $q[0,t - 1]$ is the name of a node $v$ in $T$.
 If  
 $q$ is smaller than the smallest leaf
-under $\alpha$ (or larger than the largest such under $\alpha$),
+under $v$ (or larger than the largest such under $v$),
 we immediately know the
 predecessor and can safely return with a correct value
 in line~\ref{line:retb2} or~\ref{line:retb3}. The return instruction
@@ -1242,55 +1246,57 @@ needed to store the elements of $S$).
 We will now explain how to make our data
 structure dynamic. 
 The basic approach remains the same.
-However, we now maintain the trie $T$ explicitly. 
-This means that we no longer assume that $S$
+However, in contrast to the static case, we now 
+maintain the compressed trie $T$ explicitly. 
+This means that we do not assume that $S$
 is given in a static read-only array with constant
 time access, but that the elements of $S$
 are stored in a trie that changes dynamically throughout
-the algorithm. Now, our space bounds also include
-the bits to represent $S$, so the best space bound
-that we can hope for is $O(nw)$, where $n$ is the
-current size of $S$.
-\wolfgang{TODO: Say more about how the trie is represented,
-in particular: hash table from names into pointer structure...}
+the algorithm. In particular, our space bounds must also 
+include the bits to represent $S$, so the best 
+that we can hope for is a data structure that uses $O(nw)$
+bits, where $n$ is the current size of $S$. This less restrictive
+space regime simplifies some aspects of the algorithm. For example,
+the z-fast trie for $S$ can now be maintained explicitly in a
+dynamic dictionary. The greatest challenge now is to maintain
+the dynamic trie $T$ under the required time bounds and to provide
+a fast way to go from the exit node of a given query string $q$ to the 
+predecessor of $q$.
 
-In particular, the following information needs to
-be maintained dynamically:
-\begin{itemize}
-  \item the trie $T$ that stores $S$;
-  \item the z-fast trie on $S$, given by the
-    handle resolver and the range locator;
-  \item the function $f$.
-\end{itemize}
-Some of this information can be updated easily
-by maintaining the appropriate dynamic dictionary 
-structures. Others require more work.
-The main challenges lie in updating the trie $T$ and
-in maintaining the range locator.
+In more detail, the compressed trie $T$ is maintained as
+an explicit pointer structure with parent and
+child pointers. The leaves of $T$ are
+linked in sorted order. For each node
+$v$ of $T$, we store the extent $e_v$,
+so given a node $v$ and the pointer structure
+of $T$, we can easily derive all the associated
+information for $v$ in constant time, i.e., the extent $e_v$, 
+the name $n_v$, the compressed path $c_v$, the handle $h_v$, and the skip 
+interval for $v$.
+Furthermore, we need a structure similar to the range locator 
+that is given a node $v$ of $T$ and provides pointers to
+the largest and the smallest element of $S$ in the subtree
+$T_v$ of $T$ that is rooted at $v$. This structure is more non-trivial
+to handle dynamically in the desired time bounds, and we will elaborate
+on this below. Finally, the z-fast trie is stored as an explicit
+dynamic dictionary as in Theorem~\ref{thm:succinct_retrieval_only_hashtable}.
 
-\subsubsection{Updating the Trie}
+\subsubsection{Locating the Exit Node for a Query String}
 
-\wolfgang{TODO: Check for Long Distance}
-To perform the update operation, we need a
-procedure to compute the exit node
-$\exit(q)$ for any given element $q \in \{0, 1\}^w$. 
-For this, we proceed as in 
-Algorithm~\ref{algo:pred-short}, but skipping 
-the calls to $\widehat f(p + 1)$ and
-$\widehat f(p - 1)$. This will happen as 
-soon as the prefix $p$ lies in $P$, i.e., after
-$O(\log \log l)$ iterations, where $l$
-is height of $\exit(q)$ in $T$.
-\wolfgang{height is not defined. Probably I mean the length of the
-name of the exit node?}
-
-Unfortunately, it may happen that this height $l$ is as large as $w$,
-even if $d(q, S)$ is small.
-To get around this, we use a trick of Bose~\etal~\cite{BoseDoDuHoMo13}.
-Their idea is to perform a random shift of the universe. 
+Since our dynamic algorithm must be able to update the
+compressed trie explicitly, we need to be able to get hold
+of the exit node $\exit(q)$ in $T$ for any given element 
+$q \in \{0, 1\}^w$. To make sure that this can be done explicitly,
+we need $\exit(q)$ lies at the correct level of $T$. Since this
+does not necessarily need to be the case, we use a trick of 
+Bose~\etal~\cite{BoseDoDuHoMo13}.
+The idea is to perform a random shift of the universe to
+make sure that the distance between two fixed elements
+is reflected by the length of their longest common prefix. 
 More precisely, we pick a random $r \in \{0, 1\}^w$, and we
 add $r$ to all query and update elements that appear in 
-the data structure (modulo $2^w$).
+the data structure (modulo $2^w$). Then, we have
+the following lemma, whose proof we include for completeness:
 
 \begin{lemma}[Lemma 4 in \cite{BoseDoDuHoMo13}]
 \label{lemma:delta_lca_loglog_delta}
@@ -1323,7 +1329,7 @@ By Lemma~\ref{lemma:delta_lca_loglog_delta},
 the expected height $2^{2^i}$ of the lowest common ancestor of $q$ and $q^-$
 is $O(\log d(q, S)$.
 We perform the doubly exponential
-search on the prefixes of $q$, as in Algorithm~\ref{algo:pred-search}
+search on the prefixes of $q$, as in Algorithm~\ref{algo:pred-short}
 (without computing $\widehat f (p - 1)$ or $\widehat f (p + 1)$) 
 to find the height $2^{2^i}$. After
 that, we  use a fat binary search to find the
@@ -1497,10 +1503,65 @@ the data structure needs $O(n)$ words of space, where $n = |S|$.
 \end{theorem}
 
 
+\subsubsection{Applications}
+
+Bose~\etal~\cite{BoseDoDuHoMo13} describe how to combine their structure
+with a technique of Chan~\cite{Chan02} and random 
+shifting~\cite[Chapter~11]{HarPeled11} for obtaining a data structure for 
+distance-sensitive
+approximate nearest neighbor queries on a grid.
+More precisely, let $d \in \N$ be the fixed dimension, 
+$U = \{0, \dots, 2^{w}-1\}$ be the universe, and
+let $\eps > 0$ be given.
+The goal is to maintain a dynamic set $S \subseteq U^d$ under
+insertions, deletions, and \emph{$\eps$-approximate
+nearest neighbor queries}: given a query point $q \in U^d$,
+find a $p \in S$ with $d_2(p,q) \leq (1+\eps)d_2(p, S)$.
+Plugging our $\Delta$-fast tries into the structure of
+Bose~\etal~\cite[Theorem~9]{BoseDoDuHoMo13}, we can
+immediately improve the space requirement of their structure to linear:
+\begin{theorem}
+Let $U = \{0, \dots, 2^w-1\}$ and let $d$ be a constant.
+Furthermore, let $\eps > 0$ be given.
+There exists a data structure that supports $(1+\eps)$-approximate
+nearest neighbor queries over a subset $S \subseteq U^d$ in 
+$(1/\eps^d)\log\log \Delta)$ expected time and insertions and deletions
+of elements of $U^d$ in $O(\log\log \Delta)$ expected time.
+Here, $\Delta$ denotes the Euclidean distance between the query element
+and $S$. At any point in time, the data structure requires $O(n)$
+words of space, where $n  = |S|$.
+\end{theorem}
+
+As a second application, Bose~\etal~\cite{BoseDoDuHoMo13}
+present a data structure for dominance queries on a grid,
+based on a technique of Overmars~\cite{Overmars88}.
+Again, let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$,
+$|S| = n$ be given. The goal is to construct a data structure
+for \emph{dominance queries} in $S$. That is, given a query point
+$q \in U^2$, find all points $p$ in $S$ that \emph{dominate} $q$,
+i.e., for which we have $p_x \geq q_x$ and $p_y \geq q_y$, there
+$p_x$, $p_y$ and $q_x$, $q_y$ are the $x$- and $y$-coordinates 
+of $p$ and $q$.
+
+Again, using $\Delta$-fast tries, we can immediately improve the
+space requirement for the result of 
+Bose~\etal~\cite[Theorem~10, Corollary~13]{BoseDoDuHoMo13}.
+
+\begin{theorem}
+Let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$, $|S|=n$
+be given. There exists a data structure that reports the points in $S$
+that dominate a given query point $q = (a,b) \in U^2$ in expected time
+$O(\log\log(h+v) + k)$, where $h = 2^w - a$, $v = 2^2-b$, and $k$
+is the number of points in $S$ dominated by $q$.
+The data structure uses $O(n \log n)$ space.
+\end{theorem}
+
+
 \section{Globally sensitive predecessor search}
 
-We can apply Theorem~\ref{thm:pred-long} to improve exponentially over the bound
-described in~\cite{DemaineJoPa04}, which gives an algorithm whose running time
+We can apply Theorem~\ref{thm:pred-long} to improve 
+exponentially over the bound by Demaine, Jones, and 
+\Patrascu~\cite{DemaineJoPa04}, which gives an algorithm whose running time
 depends on the largest and smallest distance between the elements of $S$. 
 More precisely, let
 $\Delta_M$ and $\Delta_m$ be, respectively, the largest and smallest distance
@@ -1615,59 +1676,6 @@ Lemma~\ref{lemma:shortinprefs}, $w-\log D(x,S)\geq (w+|e|)/2$; the fat binary se
 end takes time $O(\log (w-(a+|e|)))=O(\log (w-|e'|))=O(\log( w/2 -
 |e|/2)))=O(\log(w-|e|-\log D(x,S)))$, within the prescribed time bounds.
 \end{proof}
-
-\section{Applications}
-
-Bose~\etal~\cite{BoseDoDuHoMo13} describe how to combine their structure
-with a technique of Chan~\cite{Chan02} and random 
-shifting~\cite[Chapter~11]{HarPeled11} for obtaining a data structure for 
-distance-sensitive
-approximate nearest neighbor queries on a grid.
-More precisely, let $d \in \N$ be the fixed dimension, 
-$U = \{0, \dots, 2^{w}-1\}$ be the universe, and
-let $\eps > 0$ be given.
-The goal is to maintain a dynamic set $S \subseteq U^d$ under
-insertions, deletions, and \emph{$\eps$-approximate
-nearest neighbor queries}: given a query point $q \in U^d$,
-find a $p \in S$ with $d_2(p,q) \leq (1+\eps)d_2(p, S)$.
-Plugging our $\Delta$-fast tries into the structure of
-Bose~\etal~\cite[Theorem~9]{BoseDoDuHoMo13}, we can
-immediately improve the space requirement of their structure to linear:
-\begin{theorem}
-Let $U = \{0, \dots, 2^w-1\}$ and let $d$ be a constant.
-Furthermore, let $\eps > 0$ be given.
-There exists a data structure that supports $(1+\eps)$-approximate
-nearest neighbor queries over a subset $S \subseteq U^d$ in 
-$(1/\eps^d)\log\log \Delta)$ expected time and insertions and deletions
-of elements of $U^d$ in $O(\log\log \Delta)$ expected time.
-Here, $\Delta$ denotes the Euclidean distance between the query element
-and $S$. At any point in time, the data structure requires $O(n)$
-words of space, where $n  = |S|$.
-\end{theorem}
-
-As a second application, Bose~\etal~\cite{BoseDoDuHoMo13}
-present a data structure for dominance queries on a grid,
-based on a technique of Overmars~\cite{Overmars88}.
-Again, let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$,
-$|S| = n$ be given. The goal is to construct a data structure
-for \emph{dominance queries} in $S$. That is, given a query point
-$q \in U^2$, find all points $p$ in $S$ that \emph{dominate} $q$,
-i.e., for which we have $p_x \geq q_x$ and $p_y \geq q_y$, there
-$p_x$, $p_y$ and $q_x$, $q_y$ are the $x$- and $y$-coordinates 
-of $p$ and $q$.
-
-Again, using $\Delta$-fast tries, we can immediately improve the
-space requirement for the result of 
-Bose~\etal~\cite[Theorem~10, Corollary~13]{BoseDoDuHoMo13}.
-
-\begin{theorem}
-Let $U = \{0, \dots, 2^w-1\}$, and let $S \subseteq U^2$, $|S|=n$
-be given. There exists a data structure that reports the points in $S$
-that dominate a given query point $q = (a,b) \in U^2$ in expected time
-$O(\log\log(h+v) + k)$, where $h = 2^w - a$, $v = 2^2-b$, and $k$
-is the number of points in $S$ dominated by $q$.
-The data structure uses $O(n \log n)$ space.
-\end{theorem}
 
 \section{Delta-Fast Abstract}
 Let $w \in \N$ and $U = \{0, 1, \dots, 2^w-1\}$ be a 
