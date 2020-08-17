@@ -71,7 +71,7 @@ supported by DFG project MU/3501-1 and ERC StG 757609.}}
         \and
         Marcel Ehrhardt\thanks{Institut f\"ur Informatik, Freie 
 	Universit\"at Berlin,
-        \texttt{\{marehr, mulzer\}@inf.fu-berlin.de}}
+        \texttt{[marehr, mulzer]@inf.fu-berlin.de}}
         \and 
         Wolfgang Mulzer\footnotemark[4]
         \and 
@@ -947,6 +947,7 @@ both algorithms use the setup from Theorem~\ref{th:pref}, but with
 different choices of the function $f:P\to \N$. 
 
 \subsection{Short-distance predecessor algorithm}
+\label{sec:short-distance}
 
 We use techniques inspired by the work of Bose 
 et al.~\cite{BoseDoDuHoMo13} to obtain a
@@ -1238,11 +1239,12 @@ requires $O(n \log w)$ bits of space (in addition to the space
 needed to store the elements of $S$).
 \end{corollary}
 
-\section{Dynamic Locally Sensitive Predecessor Search}
+\section{Dynamic Short-Distance Predecessor Search}
 \label{sec:dyn_pred}
 
 We will now explain how to make our data
-structure dynamic. 
+structure
+from Section~\ref{sec:short-distance} dynamic.
 The basic approach remains the same.
 However, in contrast to the static case, we now 
 maintain the compressed trie $T$ explicitly. 
@@ -1288,7 +1290,7 @@ Since our dynamic algorithm must be able to update the
 compressed trie explicitly, we need to be able to get hold
 of the exit node $\exit(q)$ in $T$ for any given element 
 $q \in \{0, 1\}^w$. To make sure that this can be done efficiently,
-we need $\exit(q)$ lies at a level of $T$ that corresponds to
+we need that $\exit(q)$ lies at a level of $T$ that corresponds to
 the desired running time. Since this
 does not necessarily need to be the case, we use a trick of 
 Bose~\etal~\cite{BoseDoDuHoMo13}.
@@ -1305,7 +1307,7 @@ with strings of length $w + 1$, so we interpret
 the result as an element of the
 \emph{extended universe} $\{0, 1\}^{w + 1}$, possibly
 obtained by adding a leading $0$-bit.
-We have
+The utility of this method is shown in
 the following lemma, whose proof we include for completeness:
 
 \begin{lemma}[Lemma 4 in \cite{BoseDoDuHoMo13}]
@@ -1388,15 +1390,16 @@ is $\Theta(\log \Delta)$, and the claim follows.
 
 \subsection{Explicit z-Fast Tries and Explicit Fat Binary Search}
 
-Since now we have $O(nw)$ bits of storage at our
+Since we have $O(nw)$ bits of storage at our
 disposal, and since the trie $T$ is maintained
 as an explicit pointer structure, we can now
 also use more explicit versions of the z-fast trie
 and of the fat binary search.
 
 \begin{definition}[explicit z-fast trie]
-Suppose we are given a set $S \subseteq \{0, 1\}^w$. Let $T$ be the 
-compressed trie for $S$, represented as a pointer structure. 
+Suppose we are given a set $S \subseteq \{0, 1\}^w$, and a fixed
+random shift $r \in \{0, 1\}^w$. Let $T$ be the 
+compressed trie for $S + r$, represented as a pointer structure. 
 The \emph{explicit z-fast trie on $S$} is 
 a function $Z' : \{0, 1\}^* \rightarrow V(T)$, where
 $V(T)$ denotes the node set of $T$. We require that
@@ -1404,19 +1407,6 @@ $Z'(h_v) = v$, for every internal node $v$ of $T$,
 and that any other string is mapped to an arbitrary
 inner node of $T$.
 \end{definition}
-
-Since there are $O(n)$ nodes in $T$, and since a pointer
-to a node in $T$ can be represented with $O(w)$ bits,
-an explicit z-fast trie can be implemented with a dynamic
-dictionary of $O(nw)$ bits, by 
-Theorem~\ref{thm:succinct_retrieval_only_hashtable} (since
-our trie $T$ is stored explicitly, it is easy to make
-sure that $Z'$ returns only valid internal nodes
-of $T$). Using
-an explicit z-fast trie, we can also modify the fat binary
-search to return an explicit pointer
-to the exit node of the query string, 
-as shown in Algorithm~\ref{algo:query-explicit}.
 
 \begin{algorithm}
 \KwIn{a string $q \in \{0,1\}^+$, an initial 
@@ -1436,7 +1426,7 @@ $v \gets Z'(q[0, c - 1])$\;
 $b \gets c$\;}
 }
 \If{$a = 0 \wedge e_\text{root}\neq\eps$}{% 
-  \Return root of $T$\;
+  \Return the root of $T$\;
 } \Else{%
   \Return the child of $v$ corresponding to $q[|e_v|]$\;
 }
@@ -1445,17 +1435,40 @@ $b \gets c$\;}
 \label{algo:query-explicit}
 \end{algorithm}
 
-Naturally, Algorithm~\ref{algo:query-explicit} has
+Since there are $O(n)$ nodes in $T$, and since a pointer
+to a node in $T$ can be represented with $O(w)$ bits,
+an explicit z-fast trie can be implemented with a dynamic
+dictionary of $O(nw)$ bits, as described in 
+Theorem~\ref{thm:succinct_retrieval_only_hashtable} (since
+our trie $T$ is stored explicitly, it is easy to make
+sure that $Z'$ returns only valid internal nodes
+of $T$). Using
+an explicit z-fast trie, we can also modify the fat binary
+search to return an explicit pointer
+to the exit node of the query string. 
+This is shown in Algorithm~\ref{algo:query-explicit}.
+
+Algorithm~\ref{algo:query-explicit} has
 the same properties as Algorithm~\ref{algo:query},
-as stated in the following theorem. We omit the proof,
-since it is identical to the proof of Theorem~\ref{thm:correctnessfbs}.
+and the following theorem is completely analogous to
+Theorem~\ref{thm:correctnessfbs}.
+
 \begin{theorem}
 \label{thm:correctnessfbs-explicit}
-Algorithm~\ref{algo:query-explicit} takes at most $\lceil\log(b-a)\rceil$
+Algorithm~\ref{algo:query-explicit} needs at most $\lceil\log(b-a)\rceil$
 iterations
-and returns a pointer to $\exit(q)$.
+and finds a pointer to $\exit(q)$.
 \end{theorem}
 
+\begin{proof}
+The argument is identical to the proof of Theorem~\ref{thm:correctnessfbs}.
+In particular, the algorithm maintains the invariant from
+Lemma~\ref{lem:correctness}, and the running time 
+follows as before.
+\end{proof}
+
+We will denote an invocation of Algorithm~\ref{algo:query-explicit}
+with parameters $q$, $a$, and $b$ as $\fbs_e^{-}(q, a. b)$.
 
 \subsection{Locating the Exit Node for a Query String}
 
@@ -1464,14 +1477,54 @@ Lemma~\ref{lemma:delta_lca_loglog_delta}, we can use a simplified
 variant of Algorithm~\ref{algo:pred-short} together with
 the explicit fat binary search from Algorithm~\ref{algo:query-explicit}
 to find an exit node for a query string $q \in \{0, 1\}^w$.
+Our algorithm again uses a sparse set $P$ of prefixes that
+serve as starting points for the fat binary search. For a
+fixed random shift $r \in \{0, 1\}^w$, it is defined as 
+follows:
+\[
+  P = \bigl\{\, (s + r)\bigl[0,w - 2^{2^i}\bigr] \mid s \in  S \text{ and }
+	i = 0,\dots,\lfloor\log(\log w - 1)\rfloor\,\bigr\}.
+\]
+Our goal is to implement a function 
+$g : \{0, 1\}^{w + 1} \rightarrow V(T) \cup \{\perp\}$ such that
+for every $p \in P$, we have $g(p) = \exit(p)$, and such 
+that $g(p) = \perp$ for all $p \not\in \Pref(S + r)$.
+For this, we consider the set 
+\[
+Q=\bigcup_{\text{node $v$ of $T$}}
+\min{}_\preceq\{\,p\in P\mid n_v \preceq p\preceq e_v\,\},
+\]
+and we maintain two dynamic dictionaries:
+one dictionary that maps every $p \in P$ to the smallest
+index $i$ such that $p[0, w - 2^{2^i} - 1] \in Q$, and
+another dictionary that maps every element $q \in Q$ to
+a pointer to the corresponding node in $T$.
+Using the dictionary from 
+Theorem~\ref{thm:succinct_retrieval_only_hashtable},
+the  first dictionary requires 
+$O(n \log \log w \log (w - \log (n \log \log w)) 
++  n \log\log w \log\log\log n) = O(nw)$ 
+bits, since $|P| = O(n \log\log w)$,
+and since each entry has $O(\log w)$ bits.
+The second dictionary requires $O(nw)$ bits, since $|Q| = O(n)$ and
+since each entry requires $O(w)$ bits.
+To evaluate $g(p)$ in constant time, we first query the first dictionary with
+$p$, and then the second dictionary table with the
+result of the first lookup. Since $T$ is stored
+explicitly, we can then check easily whether this results
+in the desired node $v$ of $T$. If so, we return $v$, otherwise,
+we return $\perp$. Now, the search algorithm is an easy
+adaptation of Algorithm~\ref{algo:pred-short}, it is shown
+in Algorithm~\ref{algo:pred-short-dynamic}.
 
 \begin{lemma}
-\label{cor:delta_fast_expected_lca}
-Let $S \subseteq \{0, 1\}^w$ and let $T$ be 
-a compressed trie $S$, shifted by a random offset
-$r \in \{0, 1\}^w$.
+\label{lem:delta_fast_expected_lca}
+Let $S \subseteq \{0, 1\}^w$ and let $r \in \{0, 1\}$
+be a fixed random shift. Let $T$ be 
+a compressed trie for $S + r$. 
 Let $q \in \{0, 1\}^w$. 
-We can find the exit node for $q$  in expected time $O(\log\log d(q, S))$.
+We can find the exit node for $q + r$ in $T$  
+in expected time $O(\log\log d(q, S))$.
 The expectation is
 over the random choice of the shift $r$. 
 \end{lemma}
@@ -1482,11 +1535,13 @@ $d(q, S) = |q - q^-|$.
 By Lemma~\ref{lemma:delta_lca_loglog_delta},
 the expected length of the longest common
 prefix of $q + r$ and $q^- + r$ is 
-$w - O(\log d(q, S))$.
-Thus, by Jensen's inequality, we will
-hit a prefix in $P$ after $O(\log \log \log d(q, S))$
-iterations in expectation. After that, by Jensen's
-inequality and by Theorem~\ref{thm:correctnessfbs-explicit},
+$w - \Theta(\log d(q, S))$.
+Thus, since $x \mapsto \log\log\log x$ is a concave function, 
+Jensen's inequality shows that we will
+hit a prefix in $P$ after an expected number of  $O(\log \log \log d(q, S))$
+iterations. After that, 
+Theorem~\ref{thm:correctnessfbs-explicit} and
+Jensen's inequality show that
 the expected time for the fat binary search is 
 $O(\log \log \log d(q, S))$.
 \end{proof}
@@ -1498,49 +1553,26 @@ $r \in \{0, 1\}^w$}
 \KwOut{a pointer to the exit node of $q$ in $T$}
  $i \gets 0$\;
 \While{$2^{2^i} \leq (w + 1)/2$}{%
-  $p \gets (q + r)\bigl[0, w + 1 - 2^{2^i} - 1\bigr]$\;
+  $p \gets (q + r)\bigl[0, w - 2^{2^i}\bigr]$\;
   $v \leftarrow g(p)$\;
   \If{$v \neq \bot$ }{%
        \If{$e_v \prec q + r$}{%
            \tcp{We found a long extent}
-           \Return{$\fbs^-(q + r,|e_v|,w + 1)$}\;
+           \Return{$\fbs_e^-(q + r,|e_v|,w + 1)$}\;
        } \Else {
-       \tcp{We exit at $v$}
+       \tcp{$v$ is the desired exit node}
        \Return{$v$} 
        }
   }
   $i \gets i + 1$
 }
 \tcp{Standard search (we found no prefix long enough)}
-\Return{$\fbs^-(q,0, w + 1)$}
+\Return{$\fbs_e^-(q,0, w + 1)$}
 \caption{Short-distance speedup in the dynamic setting.}
 \label{algo:pred-short-dynamic}
 \end{algorithm}
 
-\begin{algorithm}
-\KwIn{a query string $q \in \{0, 1\}^w$ and a fixed 
-random shift $r \in \{0, 1\}^w$}
-\KwOut{a pointer to the exit node of $q$ in $T$}
-
- $a \gets 0$\;
-\While{$a<w/2$}{%
-  $m \gets \text{least power of $2$ in $[a+1,w]$}$\;
-  $v \gets \widehat g((q + r)[0, m-1])$\;
-  \If{$v = \bot$}{%
-     \Return{$\fbs^-(q + r,a,m)$}
-     \tcp{We obtained the longest possible prefix} 
-  }
-  $p \gets q[0,t-1]$\;
-  $a \gets |e_v|$ 
-}
-\Return{$\fbs^-(q + r, a, w + 1)$}
-
-\caption{Long-distance speedup in the dynamic setting.}
-\label{algo:pred-long-explicit}
-\end{algorithm}
-
-
-\subsubsection{Finding the Predecessor Node}
+\subsection{Finding the Predecessor Node}
 \label{sec:rangeloc}
 
 To implement a dynamic range locator, 
@@ -1627,7 +1659,7 @@ This decomposition of $T$ into dynamically changing suppaths
 is similar to the \emph{preferred paths decomposition} of
 Tango trees~\cite{DemaineHaIaPa07}.
 
-\subsubsection{Putting it Together}
+\subsection{Putting it Together}
 
 We know from the Lemma~\ref{lemma:delta_lca_loglog_delta}, that 
 the lowest common ancestor of a query element $q$ has expected 
@@ -1703,7 +1735,7 @@ the data structure needs $O(n)$ words of space, where $n = |S|$.
 \end{theorem}
 
 
-\subsubsection{Applications}
+\subsection{Applications}
 
 Bose~\etal~\cite{BoseDoDuHoMo13} describe how to combine their structure
 with a technique of Chan~\cite{Chan02} and random 
