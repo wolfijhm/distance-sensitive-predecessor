@@ -1575,10 +1575,16 @@ $r \in \{0, 1\}^w$}
 \subsection{Finding the Predecessor Node}
 \label{sec:rangeloc}
 
-To implement a dynamic range locator, 
-we need to maintain for each node $v \in T$ the
-leftmost and the rightmost element in the subtree $T_v$.
-To update this fast, we use an additional data structure.
+Algorithm~\ref{algo:pred-short-dynamic}
+finds the exit node for a given query string
+$q \in \{0, 1\}^w$. However, we still need
+a structure to go from $\exit(q)$ to the
+node that stores the predecessor of $q$ in $S$.
+More precisely, we need to maintain for each node $v \in T$ the
+leftmost and the rightmost element in the subtree $T_v$ of $T$
+that is rooted in $T$.
+This information needs to be updated quickly as 
+$S$ changes dynamically.
 
 \begin{figure}
 \centering
@@ -1592,36 +1598,38 @@ of $T$ (shown in dashed).}
 \end{figure}
 To do this, we observe the following: let $v' \in T$ be 
 a leaf in $T$. Then, $v'$ is the leftmost (or rightmost)
-leaf in the subtrees of at most $w$ ancestors $v$ of $v'$.
+leaf in the subtrees of at most $w + 1$ ancestors $v$ of $v'$ (including $v$).
 Furthermore, all these nodes form a subpath (more precisely,
 a prefix) of the path from $v$ to the root, see Figure~\ref{fig:pathdecomp}.
-Hence, if we maintain the nodes of 
-this subpath in a concatenable queue data structure
-(realized by, e.g., a balanced binary tree)~\cite{PreparateSh85},
+Hence, if we store the nodes of 
+this subpath in a balanced binary tree that supports a split
+and a join operation,
 we can obtain $O(\log w)$ update and query time
 to find the leftmost (or rightmost) element in $T_v$
 for each $v \in T$.
 However, we need that the update and query time for this
 data structure
-depend on the \wolfgang{TODO: adapt terminology} height  
-of the query node $v$.
+depend on \emph{height} of the query node $v$, i.e., 
+the number of edges on the path from
+$v$ to the desired leaf.
 Thus, we partition the possible heights
 $\{0, 1, \dots, w\}$ of the nodes on a 
 subpath into the sets
-$T_{-1} = \{0\}$, $T_i =[2^i, 2^{i+1})$, for $i = 0,\dots,\log w-1$, 
-and $T_{\log w} = \{w\}$.
-Each set is managed by a balanced binary tree, and the 
-roots of the trees are linked together. The height of the $i$-th binary 
+$T_{-1} = \{0\}$, $T_i =[2^i, 2^{i+1})$, for $i = 0,\dots,
+\lfloor \log (w + 1) \rfloor$. 
+The nodes in each set are stored in a balanced binary tree, and the 
+roots of the trees are linked together, in order. 
+The height of the $i$-th binary 
 search tree is $\log |T_i| = O(i)$. Furthermore, if a query node
 of height $h$ is given, 
-the set $T_{\lfloor \log h \rfloor}$ is responsible for it, see 
+it is contained in $T_{\lfloor \log h \rfloor}$, see 
 Figure~\ref{fig:queryds}.
 \begin{figure}
 \centering
 \includegraphics{queryds}
 \caption{The data structure for a subpath. We group the nodes
 in the subpath according to their heights, where the groups
-grow exponentially in size. Each group is represented by a
+grow exponentially in size. Each group is stored in a
 balanced tree. The roots are joined in a linked
 list. With this data structure, a node $v$ of height $h$ can
 find the leftmost leaf in the subtree $T_v$ in time $O(\log h)$.}
@@ -1629,19 +1637,18 @@ find the leftmost leaf in the subtree $T_v$ in time $O(\log h)$.}
 \end{figure}
 
 
-Moreover, $T_{-1}$ is a leaf (the depth of that node is $w$) 
-in the trie and therefore the minimum of the whole subpath. Thus, 
+Moreover, the node in $T_{-1}$ is a leaf 
+in $T$ and therefore the minimum of the whole subpath. Thus, 
 the minimum of a subpath can be found from a given node 
 $v \in T_i$ in $O(i)$ time by following the
-pointers to the root of $T_i$ and the pointers down to $T_{-1}$.
-
-If a node $v$ has $h_k = O(\log d(q, S)$ height (remaining bits), 
-the node is within
-the tree $T_{\lfloor \log h_k \rfloor}$. Thus, it takes 
-$O(\log h_k) = O(\log\log\Delta)$ time to find the leftmost
+pointers to the root of $T_i$ and the pointers left to $T_{-1}$.
+If a node $v$ has height $O(\log d(q, S))$, 
+then $v$ is stored in
+the tree $T_{\lfloor O(\log \log d(q, S)) \rfloor}$. Thus, it takes 
+$O(\log \log \log d(q, S))$ time to find the leftmost
 or rightmost leaf in $T_v$.
 
-Furthermore, we can support the following update operations:
+Our structure supports the following update operations:
 (i) \textbf{split}: given a subpath $\pi$ and a node $v$ on $\pi$, split 
 the representation of $\pi$ into two representations, one for the 
 \emph{lower} subpath from the leaf up to the child of $v$, and
@@ -1651,10 +1658,12 @@ representation of an upper subpath starting at a node $v$ obtained
 from an operation of type (i), and a representation for 
 a lower subpath up to a child of $v$, join the two representations
 into the representation for a joint subpath.
-Given the data structure, we can support
+We can implement
 both \textbf{split} and \textbf{join} in
  $O(\log h)$ time, where $h$ is the height of 
-the node $v$ where the operation occurs. 
+the node $v$ where the operation occurs, using appropriate
+split and join operations on the binary search trees that
+appear in the structure. 
 This decomposition of $T$ into dynamically changing suppaths
 is similar to the \emph{preferred paths decomposition} of
 Tango trees~\cite{DemaineHaIaPa07}.
@@ -1662,16 +1671,17 @@ Tango trees~\cite{DemaineHaIaPa07}.
 \subsection{Putting it Together}
 
 We know from the Lemma~\ref{lemma:delta_lca_loglog_delta}, that 
-the lowest common ancestor of a query element $q$ has expected 
-height $h_k = O(\log \Delta)$.
+the exit node of a query element $q$ has expected 
+height $O(\log d(q, S))$.
 
 \begin{lemma}
 \label{lemma:delta_insert}
-Let $S \subseteq U$, and let $T$ be
-a randomly shifted $\Delta$-fast tree for 
-$S$.  Let $q \in U$ be fixed.
-We can insert or delete $q$ into $T$
-in $O(\log \log \Delta)$ expected time, where the expectation is 
+Let $S \subseteq \{0, 1\}^w$, and let $r \in \{0, 1\}^w$ be
+a fixed random shift. Let $T$ be
+a trie for 
+$S + r$.  Given a string $q \in \{0, 1\}^2$,
+We can insert or delete $q$ in $T$
+in $O(\log \log d(q, s))$ expected time, where the expectation is 
 over the random choice of the shift $r$.
 \end{lemma}
 
@@ -1679,42 +1689,39 @@ over the random choice of the shift $r$.
 To insert $q$ into $T$, we need to split an edge $(u,v)$ of $T$ into
 two edges $(u,b)$ and $(b,v)$. This creates
 exactly two new nodes in $T$, an inner node and a leaf node. 
-The branch node is exactly $\lca_T(q)$, and it has expected height 
-$h_k = O(\log \Delta)$, by Lemma~\ref{lemma:delta_lca_loglog_delta}. 
+The node $u$ is exactly $\exit(q)$, and it has expected height 
+$h = O(\log d(q, S))$, by Lemma~\ref{lemma:delta_lca_loglog_delta}. 
 Thus, it will
-take $O(\log\log \Delta)$ expected time to find
+take $O(\log\log d(q, S))$ expected time to find
 the edge $(u,v)$, by
-Corollary~\ref{cor:delta_fast_expected_lca}.
+Lemma~\ref{lem:delta_fast_expected_lca}.
 
-Once the edge $(u,v)$ is found, the hash maps $H_z$ and $H_u$ 
-can then be updated in constant time.
+Once the edge $(u,v)$ is found, the dictionary that stores
+the z-fast trie
+can be updated in constant time.
 Now let us consider the update time of the 
-hash map $H_\Delta$. Recall that
-$H_\Delta$ stores the lowest branch nodes for all prefixes
-of the elements in $S$ that have certain lengths.
-This means that all prefixes on the edge $(b,v)$ which 
-are stored in the hash map $T_\Delta$ need to
-be updated. Furthermore, prefixes at certain depths which 
-are on the new edge $(b,q)$ need to
-be added. For the edge $(b,v)$, we will enumerate 
-all prefixes at certain depths, but we will select only those that 
-lie on the edge $(b,v)$. This needs
-$O(\log\log\log\Delta)$ insertions and updates in total: we
-have to insert the prefixes $q_0 \dots q_{d_i}$ for all 
-$i \geq 1$ with $d_i < |b|$. Since we defined 
-$d_i = w - h_i = w - 2^{2^i}$, 
-and since $|b| = w - O(\log \Delta)$, 
-we have that $d_i \leq |b|$ as soon as 
-$c \log\Delta < 2^{2^i}$. This holds for 
-$i > \log\log (c\log \Delta)$, and hence $i =
-\Theta(\log\log\log\Delta)$.
+dictionaries that store the sets $P$ and $Q$ of prefixes.
+We may need to insert two new prefixes into $Q$, one
+for the edge $(b, v)$ and one for the edge $(b,q)$. 
+We also need  to
+update the values for all the prefixes in $P$ that lie
+on the edge $(b,v)$.
+Finally, we may need to add a new the new prefixes
+into $P$ that lie on the edge $(b,q)$.
+This needs
+$O(\log\log\log d(q,S))$ insertions and updates in expectation: we
+have to insert or change the prefixes for all 
+$i \geq 1$ with $w - 2^{2^i} \geq w - h$, where
+$h$ is the expected height of $b$. By Lemma~\ref{},
+the expectation of $h$ is $\Theta(\log d(q, S))$,
+so the expectation of $i$ is $O(\log\log\log d(q, S)$.
 
 After that, the leftmost and rightmost elements for the subtrees
 of $T$ have to be updated. For this, we need to add one
 subpath for the new leaf $q$, and we may need to split
-a subpath at a node of height $h_k = O(\log \Delta)$ and join
+a subpath at a node of height $O(\log d(q, S))$ and join
 the resulting upper path with the newly created subpath. As we
-have seen, this takes $O(\log h_k) = O(\log \log \Delta)$ time.
+have seen, this takes $O(\log \log d(q, S))$ time.
 
 The operations for deleting an element $q$ from $S$ are symmetric.
 \end{proof}
@@ -1722,16 +1729,16 @@ The operations for deleting an element $q$ from $S$ are symmetric.
 The following theorem summarizes our result.
 
 \begin{theorem}
-Let $r \in U$ be picked uniformly at random.
-After performing a shift of $U$ by $r$, 
-the $\Delta$-fast trie provides a data structure for the
-dynamic predecessor problem such that the 
-query operations take $O(\log \log \Delta)$ worst-case time and 
-the update operations need $O(\log \log \Delta)$ expected
-time, for $\Delta = \min \{|q-q^+|, |q-q^-|\}$, where $q$ is the
-requested element and $q^+$ and $q^-$ are the predecessor and
-successor of $q$ in the current set $S$. At any point in time, 
-the data structure needs $O(n)$ words of space, where $n = |S|$.
+Let $r \in \{0, 1\}^w$ be picked uniformly at random.
+After performing a shift of $\{0, 1\}^w$ by $r$, 
+there is a data structure for the
+dynamic predecessor problem such that 
+query and update operations take $O(\log \log d(q, S))$ 
+expected
+time, where $q$ is the
+requested element and 
+$S$ is the current set in the data structure. At any point in time, 
+the data structure needs $O(nw)$ bits of space, where $n = |S|$.
 \end{theorem}
 
 
@@ -1749,7 +1756,7 @@ The goal is to maintain a dynamic set $S \subseteq U^d$ under
 insertions, deletions, and \emph{$\eps$-approximate
 nearest neighbor queries}: given a query point $q \in U^d$,
 find a $p \in S$ with $d_2(p,q) \leq (1+\eps)d_2(p, S)$.
-Plugging our $\Delta$-fast tries into the structure of
+Plugging our predecessor structure into the structure of
 Bose~\etal~\cite[Theorem~9]{BoseDoDuHoMo13}, we can
 immediately improve the space requirement of their structure to linear:
 \begin{theorem}
@@ -1757,9 +1764,9 @@ Let $U = \{0, \dots, 2^w-1\}$ and let $d$ be a constant.
 Furthermore, let $\eps > 0$ be given.
 There exists a data structure that supports $(1+\eps)$-approximate
 nearest neighbor queries over a subset $S \subseteq U^d$ in 
-$(1/\eps^d)\log\log \Delta)$ expected time and insertions and deletions
-of elements of $U^d$ in $O(\log\log \Delta)$ expected time.
-Here, $\Delta$ denotes the Euclidean distance between the query element
+$(1/\eps^d)\log\log d_2(p, S))$ expected time and insertions and deletions
+of elements of $U^d$ in $O(\log\log d_2(p, S))$ expected time.
+Here, we use the Euclidean distance between the query element $p$
 and $S$. At any point in time, the data structure requires $O(n)$
 words of space, where $n  = |S|$.
 \end{theorem}
@@ -1775,7 +1782,7 @@ i.e., for which we have $p_x \geq q_x$ and $p_y \geq q_y$, there
 $p_x$, $p_y$ and $q_x$, $q_y$ are the $x$- and $y$-coordinates 
 of $p$ and $q$.
 
-Again, using $\Delta$-fast tries, we can immediately improve the
+Again, using our structure, we can immediately improve the
 space requirement for the result of 
 Bose~\etal~\cite[Theorem~10, Corollary~13]{BoseDoDuHoMo13}.
 
@@ -1805,19 +1812,29 @@ queries in time $O(\log\log(\Delta_M/\Delta_m))$.
 \end{corollary}
 \begin{proof}
 We use a standard ``universe reduction'' argument, splitting 
-the universe $2^w$ by grouping strings sharing the most significant $\lceil \log
-n\rceil$ bits. Each subuniverse $U_i$ has size $2^{w-\lceil \log
-n\rceil}=O(2^w/n)$, and we let $S_i=S\cap U_i$. Using a constant-time
-prefix-sum data structure we keep track of the rank in $S$ of the smallest
+the universe $\{0, 1\}^w$ by grouping strings that have the same 
+most significant $\lceil \log
+n\rceil$ bits. Each subuniverse $U_i$ has size 
+$2^{w-\lceil \log n\rceil}=O(2^w/n)$, and we let $S_i=S\cap U_i$. 
+Using a constant-time
+prefix-sum data structure \wolfgang{Reference?}, 
+we keep track of the rank in $S$ of the smallest
 element of $S_i$, and we build the indices that are necessary for
-Algorithm~\ref{algo:pred-long} for each $S_i$ (seen as a set of strings of
+Algorithm~\ref{algo:pred-long} for each $S_i$ 
+(seen as a set of strings of
 length $w-\lceil \log
-n\rceil$). Thus, we can answer a query $x$ in time $O(\log(w-\lceil \log
-n\rceil -\log D(x,S_i))$, where $U_i$ is the subuniverse containing $x$. Now
-note that $\Delta_M\geq 2^w/n$, and that $\Delta_m\leq x^+-x^-
-=(x^+-x)+(x-x^-)\leq 2D(x,S)\leq 2D(x,S_i)$ (unless $x$ the smallest or the
-largest element of $S_i$, but this case can be dealt with in constant time). The
-bound follows immediately.
+n\rceil$). 
+Thus, we can answer a query $q$ in time 
+$O(\log(w-\lceil \log n\rceil -\log D(q, S_i))$, where 
+$U_i$ is the subuniverse containing $q$. Now,
+note that $\Delta_M \geq 2^w/n$, and that 
+\[
+\Delta_m \leq q^+ - q^- = (q^+ - q) + (q - q^-)
+\leq 2D(q, S) \leq 2D(q, S_i),
+\]
+(unless $q$ is the smallest or the
+largest element of $S_i$, but this case can be dealt with in constant time). 
+The bound follows immediately.
 \end{proof}
 
 \section{Finger predecessor search}
