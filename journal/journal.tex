@@ -1712,7 +1712,7 @@ This needs
 $O(\log\log\log d(q,S))$ insertions and updates in expectation: we
 have to insert or change the prefixes for all 
 $i \geq 1$ with $w - 2^{2^i} \geq w - h$, where
-$h$ is the expected height of $b$. By Lemma~\ref{},
+$h$ is the expected height of $b$. By Lemma~\ref{lemma:delta_lca_loglog_delta},
 the expectation of $h$ is $\Theta(\log d(q, S))$,
 so the expectation of $i$ is $O(\log\log\log d(q, S)$.
 
@@ -1839,68 +1839,79 @@ The bound follows immediately.
 
 \section{Finger predecessor search}
 
-We conclude with a generalisation of long-distance search that builds on previous results~\cite{BelazzouguiBoPaVi11b}.
-Using $O(n w^{1/c})$ bits (for any $c$) it
-is possible to answer \emph{weak prefix search} queries in constant time. A weak
-prefix search query takes a prefix $p$ and returns the leftmost and rightmost
-index of elements of $S$ that are prefixed by $p$; if no such element exists,
-the results are unpredictable (hence the ``weak'' qualifier), but a single access to the set $S$ is sufficient
-to rule out this case and always get a correct result. Thus, we will be
-able to compute $\lrange(-)$, $\rrange(-)$ and $\extent(-)$ on arbitrary
-elements of $\Pref(S)$ in constant time. As a consequence, also $\pred(x,t)$ can
-be extended so to return a correct value for every $t$ such that
-$x[0\..t)\in \Pref(S)$.
+We conclude with a generalisation of long-distance search 
+that builds on previous results~\cite{BelazzouguiBoPaVi11b}.
+Using $O(n w^{1/c})$ bits of space (for any positve integer $c$), 
+it is possible to answer \emph{weak prefix search} queries in 
+constant time. A weak prefix search query takes a prefix 
+$p \in \{0, 1\}^*$, and it returns the minimum and maximum
+index of an element in $S$ that has prefix $p$; if no such element exists,
+the results are arbitrary (hence the ``weak'' qualifier), but 
+a single access to the set $S$ is sufficient
+to rule out this case and to always get a correct result. Thus, we will be
+able to compute $\lrange(\cdot)$, $\rrange(\cdot)$ and $\extent(\cdot)$ 
+on arbitrary elements of $\Pref(S)$ in constant time. 
+As a consequence, $\pred(q,t)$ can also
+be extended to return a correct value for every $t$ with 
+$q[0, t - 1] \in \Pref(S)$.
 
-The basic idea of Algorithm~\ref{algo:finger} is that of using a \emph{finger}
-$y\in S$ to locate quickly an extent $e$ that is a prefix of $x$ with the guarantee that $w-|e|\leq\log|x-y|$. The extent
+The basic idea of Algorithm~\ref{algo:finger} is to use 
+a \emph{finger} $y \in S$ to locate quickly an extent $e$ 
+that is a prefix of $q$ and that has the property 
+that $w - |e| \leq \log |q - y|$. The extent
 is then used to accelerate an algorithm essentially identical
-Algorithm~\ref{algo:pred-long}, but applied to a reduced universe (the strings
-starting with $e$); the running time thus becomes
-$O(\log(w-|e|-\log D(x,S)|)=O(\log(\log|x-y|-\log D(x,S)))$.
+Algorithm~\ref{algo:pred-long}, but applied to a reduced universe 
+(the strings starting with $e$); the running time thus becomes
+$O(\log(w - |e| - \log D(q, S)|) = O(\log(\log|q - y|- \log D(x, S)))$.
 
 \begin{algorithm}
-\KwIn{a nonempty string $x\in 2^w$ and a $y\in S$ such that $y<x$}
-\KwOut{index $i$ such that $S[i]=x^-$}
+\KwIn{a nonempty string $q \in \{0, 1\}^w$ and a $y \in S$ such that $y < q$}
+\KwOut{an index $i$ with $S[i] = q^-$}
 
-$t \gets \max\{\,s\mid y[0\..s)+1\preceq x\,\}$\;
-$e \gets \extent(y[0\..t)+1)$\;
-\If{$y[0\..t)+1\not\preceq e$}{%
-  \Return $\rrange(y[0\..t))$
+$t \gets \max\{\,s \mid y[0, s - 1] + 1 \preceq q\,\}$\;
+$e \gets \extent(y[0, t - 1] + 1)$\;
+\If{$y[0, t - 1] + 1 \not\preceq e$}{%
+  \Return $\rrange(y[0, t - 1])$
 }
-\tcp{$y[0\..t)+1\not\in\Pref(S)$} 
-\If{$e\not\prec x$}{% 
-  \Return{$\pred(x,t)$}
+\tcp{$y[0, t - 1] + 1\not\in\Pref(S)$} 
+\If{$e \not\prec q$}{% 
+  \Return{$\pred(q, t)$}
 }
-\tcp{$x$ exits between $y[0\..t)+1$ and $e$} 
+\tcp{$q$ exits between $y[0, t - 1] + 1$ and $e$} 
 $a \gets 0$\;
-\tcp{Now $e\prec x$ and $w-|e|\leq\log|x-y|$} 
-\While{$a<(w-|e|)/2$}{%
-  $m \gets \text{least power of 2 in $(a-|e|\..w-|e|)$}$\;
-  $p \gets x[0\..m+|e|)$
+\tcp{Now $e \prec q$ and $w - |e| \leq \log |q - y|$} 
+\While{$a < (w - |e|)/2$}{%
+  $m \gets \text{least power of~2 in $\{a - |e|+ 1, \dots, w - |e| -1\}$}$\;
+  $p \gets q[0, m + |e| - 1]$\;
   \If{$p\not\in\Pref(S)$}{%
-    \Return $\fbs^-(x,a+|e|,m+|e|)$
+    \Return $\fbs^-(q, a + |e|, m +|e|)$
   }
-  \If{$S[\lrange(p)]\geq x$}{%
+  \If{$S[\lrange(p)]\geq q$}{%
     \Return{$\lrange(p)-1$}
   }
-  \If{$S[\rrange(p)] < x$}{%
+  \If{$S[\rrange(p)] < q$}{%
     \Return{$\rrange(p)$}
   }
   $a \gets |\extent(p)|-|e|$ 
   \tcp{This is a valid extent}
 }
-\Return{$\fbs^-(x,a+|e|,w)$}
-\caption{\label{algo:finger}Long-distance finger-search speedup.}
+\Return{$\fbs^-(q, a +|e|,w)$}
+\caption{Long-distance finger-search speedup.}
+\label{algo:finger}
 \end{algorithm}
 
 
 \begin{theorem}
 \label{th:finger}
-Algorithm~\ref{algo:finger} returns the predecessor of an input string $x$ given
-a finger $y\in S$, with $y<x$, in time $O(\log(\log|x-y|-\log D(x,S)))$ using an 
+Algorithm~\ref{algo:finger} returns the predecessor 
+of a query string $q$ given
+a finger $y\in S$, with $y < q$, in time 
+$O(\log(\log|q - y|-\log D(q,S)))$, using an 
 index of $O(n w^{1/c})$ bits 
-of space, for any $c$ (in addition to the space needed to store the elements of $S$).
+of space, for any $c$ 
+(in addition to the space needed to store the elements of $S$).
 \end{theorem}
+
 \begin{proof}
 First we show that the algorithm is correct. 
 If we exit at the first return instruction, $y[0\..t)+1$ is
