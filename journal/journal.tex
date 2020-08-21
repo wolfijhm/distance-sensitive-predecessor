@@ -2027,22 +2027,38 @@ Once we have recognized the type of the exit node, we can conclude the predecess
 
 \subsection{Faster Short Distance sensitive predecessor search}
 
-We now do short distance sensitive predecessor search in time $O(\log\frac{\log d(x,S)}{\log w})$. Once we get to level $\log\log d(x,S)-\log\log w$, we do fat binary search. The fat-binary search stops after $\log\log d(x,S)-\log\log w$ steps and the final search is done as describes in the previous section. Of course the definition of $P$ and $Q$ are changed to reflect the fact that now all the keys are viewed as strings over alphabet $[2^{\lceil\log w/2\rceil}]$. Thus $P$ is redefined as follows:
-
+We can now do short distance sensitive predecessor search 
+in time $O(\log\frac{\log d(q, S)}{\log w})$. 
+Once we get to level $\log\log d(q,S) - \log\log w$, we do fat 
+binary search. The fat binary search stops after 
+$\log\log d(q, S)-\log\log w$ steps, and the final search 
+is done as described in the previous section. 
+Of course, the definitions of $P$ and $Q$ must be adapted to 
+reflect the fact that now all the keys are viewed as strings 
+over $\{0, 1\}^{\lceil\log w/2\rceil}$. 
+In particular, $P$ is redefined as follows:
 \[
-	P=\bigl\{\,x\bigl[0..\frac{w}{\lceil\log w/2\rceil}]-2^{2^i}\bigr) \mid x \in  S \text{ and }
-	i=0,1,\dots,\lfloor\log(\log \frac{w}{\lceil\log w/2\rceil} - 1)\rfloor\,\bigr\}.
+P = \left\{\,s\left[0,\frac{w}{\lceil\log w/2\rceil} - 2^{2^i} - 1\right] 
+\left\vert \,s \in  S \text{ and }
+	i=0,\dots,\left\lfloor\log(\log \frac{w}{\lceil\log w/2\rceil} - 1)
+	\right\rfloor\,\right.\right\},
 \]
-And $Q$ keeps exactly the same definition. 
+while $Q$ keeps exactly the same definition. 
 \[
-Q=\bigcup_{\text{node $\alpha$}}\min{}_\preceq\{\,p\in P\mid n_\alpha\preceq p\preceq e_\alpha\,\}
+Q=\bigcup_{\text{node $v$}}\min{}_\preceq\{\,p\in P\mid n_v\preceq p 
+\preceq e_v\,\}.
 \]
-Now the algorithm for short distance sensitive search is exactly as before except that the searched key $x$ is now considered as a key over alphabet $[2^{\lceil\log w/2\rceil}]$ and that the number of iteration of the while loop is upper bounded by $\frac{w}{2\lceil\log w/2\rceil}$ instead of $w/2$
+Now, the algorithm for short distance sensitive search is 
+exactly as before, except that the query $q$ is now interpreted 
+as a string over $\{0, 1\}^{\lceil\log w/2\rceil}$ and that the 
+number of iteration of the while loop is upper bounded by 
+$w((2\lceil\log w/2\rceil)$ instead of $w/2$
 \begin{theorem}
 \label{thm:pred-short}
-We can build an index that returns the predecessor of $x$
-in time $O(\log\frac{\log d(x,S)}{\log w})$, and requires $O(n \log w )$
-bits of space (in addition to the space needed to store the elements of $S$).
+We can build an index that returns the predecessor of $q$
+in time $O\left(\log\frac{\log d(q,S)}{\log w}\right)$, 
+and requires $O(n \log w )$
+bits of space (in addition to the space to store the elements of $S$).
 \end{theorem}
 
 
