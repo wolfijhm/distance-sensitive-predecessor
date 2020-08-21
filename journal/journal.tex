@@ -86,11 +86,23 @@ supported by DFG project MU/3501-1 and ERC StG 757609.}}
 \maketitle
 
 \begin{abstract}
-\wolfgang{TODO}
-\end{abstract}
+\wolfgang{delta-fast}
+Let $w \in \N$ and $U = \{0, 1, \dots, 2^w-1\}$ be a 
+bounded universe of $w$-bit integers.  We present a 
+dynamic data structure for predecessor searching in 
+$U$.  Our structure needs $O(\log \log \Delta)$ time 
+for queries and $O(\log \log \Delta)$ expected time 
+for updates, where $\Delta$ is the difference between 
+the query element and its nearest neighbor in the 
+structure. Our data structure requires linear space. 
+This improves a result by Bose~\etal [CGTA, 46(2), pp.~181--189].
 
-\iffalse
-\section{Sensitive Abstract}
+The structure can be applied for answering approximate nearest
+neighbor queries in low dimensions and for dominance queries on
+a grid.
+
+
+\wolfgang{sensitive}
 A \emph{predecessor (successor) search} finds the largest 
 element $x^-$ smaller than the input string $x$ (the smallest 
 element $x^+$ larger than or equal to $x$, respectively) out of 
@@ -112,7 +124,7 @@ spaced in the universe; finally, for our third result we rely
 on a \emph{finger} (i.e., an element of $S$) to improve upon 
 the first one; its running time depends on the distance between 
 the input and the finger.
-\fi
+\end{abstract}
 
 \section{Introduction}
 
@@ -1616,7 +1628,7 @@ Thus, we partition the possible heights
 $\{0, 1, \dots, w\}$ of the nodes on a 
 subpath into the sets
 $T_{-1} = \{0\}$, $T_i =[2^i, 2^{i+1})$, for $i = 0,\dots,
-\lfloor \log (w + 1) \rfloor$. 
+\lfloor \log w  \rfloor$. 
 The nodes in each set are stored in a balanced binary tree, and the 
 roots of the trees are linked together, in order. 
 The height of the $i$-th binary 
@@ -1872,10 +1884,13 @@ $t \gets \max\{\,s \mid y[0, s - 1] + 1 \preceq q\,\}$\;
 $e \gets \extent(y[0, t - 1] + 1)$\;
 \If{$y[0, t - 1] + 1 \not\preceq e$}{%
   \Return $\rrange(y[0, t - 1])$
+  \label{line:finger_ret1}
 }
 \tcp{$y[0, t - 1] + 1\not\in\Pref(S)$} 
 \If{$e \not\prec q$}{% 
-  \Return{$\pred(q, t)$}
+  \Return{$\pred(q, t)$
+\label{line:finger_ret2}
+  }
 }
 \tcp{$q$ exits between $y[0, t - 1] + 1$ and $e$} 
 $a \gets 0$\;
@@ -1913,45 +1928,49 @@ of space, for any $c$
 \end{theorem}
 
 \begin{proof}
-First we show that the algorithm is correct. 
-If we exit at the first return instruction, $y[0\..t)+1$ is
-not in $\Pref(S)$, which implies that $x^-$ is prefixed by $y[0\..t)$, and thus
-the output is correct. If we exit at the second return instruction, $x$
-exits at the same node as $y[0\..t)+1=x[0\..t)$. Otherwise, $e$ is an extent
-that is a proper prefix of $x$, and the remaining part of the algorithm
-is exactly Algorithm~\ref{algo:pred-long} applied to the set of strings of $S$ 
-that are prefixed by $e$, with $e$ removed (the algorithm is slightly
-simplified by the fact that we can test membership to $\Pref(S)$ and compute
+First, we show that the algorithm is correct. 
+If we exit at the first return instruction
+in line~\ref{line:finger_ret1},
+$y[0, t - 1] + 1$ is not in $\Pref(S)$, 
+which implies that $q^-$ is prefixed by $y[0, t - 1]$, 
+and thus the output is correct. If we exit at 
+the second return instruction in 
+line~\ref{line:finger_ret2}, $q$
+exits at the same node as $y[0, t - 1] + 1 = q[0, t - 1]$. 
+Otherwise, $e$ is an extent
+that is a proper prefix of $q$, and the remaining part 
+of the algorithm is exactly Algorithm~\ref{algo:pred-long} 
+applied to the set of strings of $S$ that are prefixed by $e$, 
+with $e$ removed (the algorithm is slightly simplified 
+by the fact that we can test membership to $\Pref(S)$ and compute
 extents for every prefix). Correctness is thus immediate.
 
-All operations are constant time, except for the last loop. Note that as soon as
-$m+|e|\geq w-\log D(x,S)$ the loop ends or a prefix of $x$ is found (as in the
-proof of Algorithm~\ref{algo:pred-long}), and this requires no more than $\log(w-|e|-\log
-D(x,S))$ iterations; moreover, $m\leq 2a$ (because there is always
-a power of $2$ in the interval $(a\..2a]$), so the fat binary search in the first
-return will take no more than $\log(m-a)\leq \log a\leq \log (w-|e|-\log D(x,S))$.
-If the loop exits naturally, then there is a prefix $e'$ of $x$ belonging
-to $\Pref(S)$ and longer than $(w+|e|)/2$, hence by
-Lemma~\ref{lemma:shortinprefs}, $w-\log D(x,S)\geq (w+|e|)/2$; the fat binary search at the
-end takes time $O(\log (w-(a+|e|)))=O(\log (w-|e'|))=O(\log( w/2 -
-|e|/2)))=O(\log(w-|e|-\log D(x,S)))$, within the prescribed time bounds.
+All operations are constant time, except for the last loop. 
+Note that as soon as $m + |e| \geq  w - \log D(q, S)$, 
+the loop ends or a prefix of $q$ is found (as in the
+proof of Algorithm~\ref{algo:pred-long}), 
+and this requires no more than $\log(w - |e| - \log D(q, S))$ 
+iterations; moreover, $m \leq 2a$ (because there is always
+a power of $2$ in the interval 
+$[a + 1, 2a]$), so the fat binary search in the first
+return will take no more than
+\[
+\log(m - a) \leq \log a \leq \log (w - |e| - \log D(q, S))
+\]
+steps.
+If the loop exits naturally, then there is a 
+prefix $e'$ of $q$ belonging to $\Pref(S)$ 
+and longer than $(w + |e|)/2$, hence by
+Lemma~\ref{lemma:shortinprefs}, 
+we have $w - \log D(q, S) \geq (w + |e|)/2$; 
+the fat binary search at the
+end takes time 
+\[
+O(\log (w -(a + |e|))) = O(\log (w - |e'|))
+=O(\log( w/2 - |e|/2))) =O(\log(w-|e|-\log D(q,S))),
+\]
+within the prescribed time bounds.
 \end{proof}
-
-\section{Delta-Fast Abstract}
-Let $w \in \N$ and $U = \{0, 1, \dots, 2^w-1\}$ be a 
-bounded universe of $w$-bit integers.  We present a 
-dynamic data structure for predecessor searching in 
-$U$.  Our structure needs $O(\log \log \Delta)$ time 
-for queries and $O(\log \log \Delta)$ expected time 
-for updates, where $\Delta$ is the difference between 
-the query element and its nearest neighbor in the 
-structure. Our data structure requires linear space. 
-This improves a result by Bose~\etal [CGTA, 46(2), pp.~181--189].
-
-The structure can be applied for answering approximate nearest
-neighbor queries in low dimensions and for dominance queries on
-a grid.
-
 
 \bigskip
 \noindent\textbf{Acknowledgments.}
